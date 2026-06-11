@@ -1043,9 +1043,41 @@ cliente accediera a su perfil completo con datos terapeuticos sensibles.
 
 ##### Configuracion inicial del PIN (cuando `ERR_NO_PIN_SET`)
 
-Si el script retorna `ERR_NO_PIN_SET` al intentar `verify`, significa que ese
-cliente aun no tiene PIN. El agente NO crea el perfil en memoria hasta que
-exista un PIN configurado.
+Si el script retorna `ERR_NO_PIN_SET` al intentar `verify`, el agente **DEBE**
+primero distinguir entre dos casos antes de proceder con `set`. Esto es
+critico: si ya existe un perfil en memoria para ese `cliente_<id>`, no
+podemos permitir que un tercero simplemente "configure un PIN" sobre la
+cuenta ajena — seria un takeover trivial.
+
+**Paso 0 — Comprobar si ya existe perfil en memoria para `cliente_<id>`:**
+
+Antes de cualquier otra accion, el agente ejecuta:
+
+  `memory-local_search_nodes(query="cliente_<id>")`
+
+e interpreta los resultados:
+
+- **No hay resultados relevantes** (o los resultados no se relacionan
+  con un cliente con ese identificador) → **CASO A: cliente nuevo
+  legitimo** → continuar con "Paso 1" abajo.
+- **Si hay resultados que muestran un perfil existente** del cliente
+  (entidad `cliente_<id>` u observaciones que claramente lo
+  identifican) → **CASO B: migracion / intento de takeover** → NO
+  proceder con `set` directamente. En su lugar, saltar al flujo
+  completo de "Recuperacion de PIN olvidado" (siguiente subseccion)
+  para verificar la identidad del solicitante mediante pregunta
+  personal antes de permitir crear un PIN sobre un perfil
+  preexistente.
+
+Este Paso 0 es **obligatorio en TODAS las devoluciones de
+`ERR_NO_PIN_SET`**, sin excepcion. Saltarselo reintroduce la
+vulnerabilidad que el sistema de autenticacion por PIN esta
+disenado para cerrar.
+
+**Paso 1 — Configuracion (solo Caso A, cliente nuevo legitimo):**
+
+Confirmado el Caso A, el agente NO crea el perfil en memoria hasta que
+exista un PIN configurado, y procede asi:
 
 1. El agente explica con calidez:
    > *"Veo que es tu primera vez por aqui, o que aun no tienes PIN configurado.
@@ -1073,6 +1105,11 @@ exista un PIN configurado.
 
 4. Tras `OK`, continuar con el flujo normal de §4 (Primera Sesion) o §7
    (Apertura de Sesion) segun haya o no memoria previa.
+
+**Para Caso B**: ejecutar el flujo completo de "Recuperacion de PIN olvidado"
+(ver siguiente subseccion). Tras un reset exitoso con `RESETEAR AHORA`, NO se
+crea automaticamente un PIN nuevo: se ofrece al usuario configurar uno nuevo
+regresando al Paso 1 de esta subseccion (ya con el perfil legitimado).
 
 ##### Recuperacion de PIN olvidado
 
@@ -1380,6 +1417,13 @@ tecnicos van a stderr.
   + reset con confirmacion explicita (`RESETEAR AHORA`).
 - **Carpetas y archivos sensibles** (`~/.config/opencode/data/`) tienen
   permisos `0700` / `0600` y estan excluidos del repositorio git.
+- **Caso de migracion / takeover prevenido**: si un cliente tiene
+  perfil en memoria pero aun no tiene PIN, NO se permite `set` directo
+  cuando retorna `ERR_NO_PIN_SET`. Se bifurca a "Recuperacion de PIN
+  olvidado" para verificar identidad primero. Esto evita que un
+  tercero con conocimiento del nombre del cliente tome control de la
+  cuenta solo porque el dueno legitimo aun no ha migrado al sistema
+  de PIN.
 
 ##### Cuando falla el mecanismo
 
