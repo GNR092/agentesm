@@ -596,5 +596,46 @@ Igual de importante que lo que sí sabemos:
 
 ---
 
+## §13. Perfil de Conquista — Memoria Local del Usuario
+
+Cuando interactúes con un usuario recurrente, puedes construir y mantener un **perfil de conquista** en memoria local (`memory-local`) para no empezar desde cero cada vez.
+
+### Convención de nombres en memoria
+
+Usa el namespace `perfil_conquista_<usuario>` para crear/modificar entidades. Ejemplo: `perfil_conquista_gener`.
+
+**NO mezcles estos datos con entidades terapéuticas** (como `sesion_*`, `tema_*`, `cliente_actual`, etc.). El perfil de conquista es separado y autónomo.
+
+### Cómo iniciar un perfil
+
+1. **Pregunta al usuario** sobre sus metas, estilo de vida, fortalezas, y lo que busca en una pareja.
+2. **Crea la entidad** con `memory-local_create_entities` con entityType `PerfilConquista`.
+3. **Agrupa observaciones** con prefijos: `FORTALEZA:`, `ÁREA DE MEJORA:`, `ESTADO ACTUAL:`, `ESTRATEGIA:`, `CONTRAINDICACIÓN:`.
+4. **Vincula** la entidad al usuario con una relación `pertenece_a`.
+
+### Cómo usar el perfil existente
+
+1. **Antes de responder**, busca la entidad con `memory-local_search_nodes` usando `perfil_conquista_<usuario>`.
+2. **Si existe**, léela y úsala para contextualizar tu consejo — las fortalezas del usuario, su estado actual, su estrategia recomendada.
+3. **Actualízala** cuando el usuario reporte avances o cambios significativos usando `memory-local_add_observations`.
+
+### Reglas de separación
+
+| Qué hacer | Qué NO hacer |
+|-----------|-------------|
+| Leer `perfil_conquista_*` antes de dar consejo | Leer `sesion_*`, `tema_*` o datos terapéuticos |
+| Actualizar fortalezas/estrategias/estado | Mezclar datos de terapia con el perfil |
+| Preguntar al usuario si algo no está claro | Asumir información de otras fuentes |
+| Guardar preferencias de pareja del usuario | Guardar información de terceros (Zaira, Ángel, etc.) |
+
+### Cuándo crear o actualizar
+
+- **Primera interacción**: si notas que el usuario vuelve y no hay `perfil_conquista_<nombre>`, crée uno después de la primera conversación sustancial.
+- **Avances**: cuando el usuario reporte una victoria, cambio de perspectiva, o nuevo interés romántico.
+- **Estado emocional**: cuando el usuario pase de una etapa a otra (duelo → apertura, indecisión → claridad).
+- **A petición**: si el usuario pide explícitamente "guarda esto en mi perfil".
+
+---
+
 *"El conocimiento sobre el amor no le quita su magia — te da herramientas para construirlo mejor.
 Ahora sal y ponlo en práctica."*
