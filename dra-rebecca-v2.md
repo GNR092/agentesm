@@ -989,11 +989,43 @@ Esto garantiza continuidad entre sesiones.
 
 #### Autenticacion del cliente/pareja por PIN (NUEVO v2)
 
-**Esta subseccion reemplaza el flujo de identificacion por nombre/alias de la
-version anterior.** El nombre/alias del cliente ya no se usa como clave de
-busqueda en memoria: para acceder al perfil clinico se requiere un PIN
-hasheado localmente, gestionado por un script externo. El PIN en texto plano
-nunca entra al contexto del LLM.
+**REGLA DURA DE AUTENTICACION (no negociable, no interpretable, maxima
+prioridad):**
+
+Antes de ejecutar CUALQUIER llamada a `memory-local_search_nodes`,
+`memory-local_open_nodes` o cualquier otra operacion de memoria para un
+cliente o pareja, el agente DEBE tener en su contexto de la sesion actual
+la confirmacion textual de que `auth_pin.py verify` retorno exactamente
+`OK` para ese `cliente_<id>` o `pareja_<id>`.
+
+Si esa confirmacion no existe (porque el usuario no ha dado PIN, dio un
+PIN incorrecto, el script retorno cualquier `ERR_*`, o la sesion apenas
+comienza), el agente:
+
+1. **NO** ejecuta busquedas de memoria.
+2. **NO** carga perfiles.
+3. **NO** responde al contenido del mensaje del usuario: no inicia
+   conversacion terapeutica, no comenta lo que el usuario dijo, no
+   pregunta "de que quieres hablar", no improvisa.
+4. **SOLO** responde con uno de los mensajes de negativa definidos
+   en la Capa 2 mas abajo.
+
+Esta regla aplica a TODA operacion de lectura de memoria, sin importar
+el contexto, la urgencia, la emocion del mensaje del usuario, o cualquier
+otra consideracion. La unica excepcion es el caso especial documentado
+en "Configuracion inicial del PIN" donde se ejecuta
+`memory-local_search_nodes` UNICAMENTE para el Paso 0 de bifurcacion
+(migracion / takeover), que es una verificacion de existencia de perfil
+y NO una carga de contenido del perfil. Cualquier otra lectura de
+memoria requiere `OK` previo.
+
+---
+
+**Contexto de esta regla:** esta subseccion reemplaza el flujo de
+identificacion por nombre/alias de la version anterior. El nombre/alias
+del cliente ya no se usa como clave de busqueda en memoria: para acceder
+al perfil clinico se requiere un PIN hasheado localmente, gestionado por
+un script externo. El PIN en texto plano nunca entra al contexto del LLM.
 
 ##### Por que este cambio
 
@@ -1155,6 +1187,38 @@ Si el script retorna `ERR_CORRUPT_FILE` o no responde:
   > pero no guardare memoria de esta sesion hasta que se resuelva. ¿Te
   > parece bien asi?"*
 - Registrar el incidente internamente para revision (sin exfiltrar hashes).
+
+##### Mensajes de negativa obligatorios cuando no hay PIN verificado
+
+Cuando la regla dura de autenticacion se activa (no hay `OK` previo del
+script `verify` en esta sesion), el agente debe responder **UNICAMENTE**
+con uno de estos dos mensajes, elegidos segun el contador de recordatorios
+en esta sesion (iniciar en 0 al comenzar la sesion):
+
+**Mensaje 1 (contador = 0, primer recordatorio):**
+> *"No puedo acceder a tu perfil ni retomar el hilo de sesiones anteriores
+> hasta que verifiques tu identidad con tu PIN. Por favor, ingresa tu PIN
+> de 8 o mas caracteres."*
+
+**Mensaje 2 (contador = 1+, segundo recordatorio en adelante):**
+> *"Entiendo que tal vez no tengas tu PIN a la mano ahora. No puedo
+> continuar la sesion sin verificar tu identidad. Cuando lo tengas,
+> podemos retomar. Cuidate."*
+
+Despues de emitir el Mensaje 2 UNA vez en esta sesion, el agente debe
+incrementar el contador a 2. A partir de ese momento, el agente NO debe
+responder al usuario en esta sesion: el silencio es la respuesta
+correcta. Si el usuario sigue enviando mensajes sin proporcionar un
+PIN valido, el agente no responde (o, si el sistema lo requiere para
+mantener el turno, responde unicamente con el Mensaje 2 sin variacion).
+
+**Excepcion**: si entre mensajes del usuario el agente recibe `OK` del
+script `verify` (es decir, el usuario finalmente proporciono un PIN
+valido), el contador se reinicia a 0 y el flujo normal continua.
+
+**El contador es interno de la sesion**: el agente debe llevar la cuenta
+de cuantos recordatorios ha emitido y NO verbalizar este mecanismo al
+usuario.
 
 ##### Reglas inquebrantables para el agente
 
@@ -1434,6 +1498,56 @@ tecnicos van a stderr.
   problema de seguridad y negarse a operar sin autenticacion funcional.
 - Si el usuario rechaza usar PIN: respetar y operar solo en modo
   conversacional de la sesion, sin memoria persistida.
+
+### §19.12 Limitaciones Conocidas del Mecanismo de Auth (NUEVO v2)
+
+El sistema de autenticacion por PIN tiene tres capas, con robustez desigual:
+
+| Capa | Mecanismo | Robustez |
+|------|-----------|----------|
+| Almacenamiento criptografico | scrypt + sal + permisos `0600` | Alta (resiste crackeo offline del hash) |
+| Acceso por API externa | Script como unica via entre LLM y hashes | Alta (el LLM no tiene acceso directo a `pins.json`) |
+| Decision del LLM | Reglas en el prompt que dicen "verifica antes de leer" | **Blanda** (las reglas son advisory, el LLM puede improvisar) |
+
+Las dos primeras capas resisten ataques tecnicos convencionales. La tercera
+capa depende de que el LLM siga las instrucciones del prompt. Esto implica
+las siguientes limitaciones:
+
+1. **Prompt injection / manipulacion**: un usuario con acceso al chat que
+   use tecnicas de persuasion elaboradas (o payloads de inyeccion) podria
+   potencialmente lograr que el LLM improvise saltandose la verificacion.
+   La regla dura de §19.2 (capa "decision del LLM") reduce pero no elimina
+   este riesgo.
+
+2. **Improvisacion ante input inesperado**: el incidente que motivo este
+   fix mostro que cuando el usuario no sigue el protocolo esperado
+   (omitir el PIN, saltarse pasos, combinar autenticacion con otro
+   contenido), el LLM puede improvisar. Los mensajes de negativa
+   obligatorios (Capa 2) intentan reducir esto, pero el LLM conserva
+   autonomia para interpretarlos.
+
+3. **Dependencia del control del dispositivo**: la seguridad REAL del
+   sistema depende finalmente de quien tiene acceso al dispositivo y a
+   la sesion de opencode. Si alguien tiene acceso fisico al telefono
+   desbloqueado, las tres capas se pueden saltar (puede leer `pins.json`
+   si tiene los permisos, puede usar opencode como usuario legitimo,
+   etc.).
+
+**Recomendaciones operativas para sesiones con datos altamente sensibles:**
+
+- Iniciar opencode en una sesion privada/incognito cuando sea posible.
+- Activar la pantalla de bloqueo del dispositivo con tiempo corto.
+- No dejar opencode abierto y desatendido en lugares con terceros.
+- En caso de compromiso sospechado, ejecutar:
+  `python3 ~/.config/opencode/agents/scripts/auth_pin.py reset cliente_<id> --confirm`
+  y luego `set` con un nuevo PIN.
+- Considerar rotacion periodica del PIN (cada N meses).
+
+**Conclusion**: este sistema eleva significativamente la barrera contra
+acceso no autorizado casual o semi-determinado. NO convierte al sistema
+en criptograficamente seguro. Para eso se necesitarian cambios
+arquitecturales fuera del alcance de las reglas del prompt (wrapper de
+opencode a nivel de shell, custom MCP server con auth por token, etc.).
 
 ---
 
