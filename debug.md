@@ -25,6 +25,11 @@ Fase actual: INVESTIGACIÓN.
 
 Antes de formular cualquier hipótesis, debes completar esta fase y documentarla:
 
+**Determinar prefijo de memoria:**
+Revisar `opencode.json` → `"mcp"` → buscar la clave con `"memory"` en el nombre y `"enabled": true`.
+El prefijo de herramientas es el nombre de esa clave (ej: `memory`, `memory-local`, `memory-server`).
+En adelante se referencia como `{memory_prefix}`.
+
 ```
 TRIAJE:
 Síntoma observado: [descripción exacta del fallo]
@@ -34,7 +39,18 @@ Entorno: [versión, rama, entorno de ejecución]
 Herramientas disponibles: [qué comandos/logs/queries son accesibles]
 ```
 
-Solo al completar el triaje puedes abrir H[1].
+**Paso adicional — consultar memoria histórica:**
+```
+{memory_prefix}_search_nodes(query="[síntoma del fallo]")
+```
+Si aparecen bugs previos con síntomas similares:
+```
+{memory_prefix}_open_nodes(names: ["bug-xxx", "bug-yyy"])
+```
+→ Revisar patrones, causas y experimentos ya ejecutados.
+→ Evitar repetir hipótesis ya descartadas.
+
+Solo al completar el triaje (incluyendo la consulta a memoria) puedes abrir H[1].
 
 ---
 
@@ -293,6 +309,16 @@ Y detener el análisis hasta obtenerla o diseñar un experimento alternativo.
 - `mcp-postgres-toolkit_describe_table` — estructura de columnas
 - `mcp-postgres-toolkit_describe_foreign_keys` — llaves foráneas
 
+**Memoria (MCP — prefijo dinámico `{memory_prefix}`):**
+- `{memory_prefix}_search_nodes` — buscar bugs similares por semántica (usar en Triaje)
+- `{memory_prefix}_open_nodes` — ver detalle completo de entidades previas
+- `{memory_prefix}_create_entities` — crear entidad bug/módulo con observaciones iniciales
+- `{memory_prefix}_add_observations` — agregar hallazgos a entidades existentes
+- `{memory_prefix}_create_relations` — relacionar bug con archivo, módulo, hipótesis
+- `{memory_prefix}_set_importance` — marcar relevancia (critical / important / deprecated)
+- `{memory_prefix}_read_graph` — leer grafo completo de conocimiento
+- `{memory_prefix}_delete_entities` / `_delete_observations` / `_delete_relations` — limpieza
+
 **Sistema:**
 - `bash` — comandos shell (git, logs, procesos)
 - `read/glob/grep` — lectura y búsqueda de archivos locales
@@ -310,16 +336,69 @@ Toda afirmación sobre comportamiento del sistema debe estar respaldada por outp
 
 ## Memoria Persistente
 
-Al finalizar cada hipótesis, **actualizar la memoria** con los hallazgos relevantes:
+El prefijo `{memory_prefix}` se determina al inicio (ver Fase 0 — Triaje).
+Corresponde al nombre del servidor MCP de memoria activo en `opencode.json`
+(ej: `memory`, `memory-local`, `memory-server`).
+
+### Al iniciar una investigación
+
+Crear la entidad raíz del bug:
 
 ```
-memory_add_observations([
-  { entityName: "bug-[id]", contents: ["Hipótesis H[N] descartada: [razón]", "Patrón detectado: [descripción]"] },
-  { entityName: "módulo-[nombre]", contents: ["Causa raíz parcialmente identificada: [descripción]"] }
+{memory_prefix}_create_entities([
+  { name: "bug-[id]", entityType: "bug",
+    observations: [
+      "Inicio: [fecha]",
+      "Síntoma: [descripción exacta del fallo]",
+      "Entorno: [versión, rama]"
+    ]
+  }
 ])
 ```
 
-**Disparadores obligatorios de guardado en memoria:**
+### Al finalizar cada hipótesis
+
+**Actualizar la memoria** con los hallazgos relevantes:
+
+```
+{memory_prefix}_add_observations([
+  { entityName: "bug-[id]",
+    contents: [
+      "H[N]: [CONFIRMADA | DESCARTADA | INCONCLUSA]",
+      "Causa: [razón]",
+      "Patrón detectado: [contaminación de estado / race condition / etc.]"
+    ]
+  },
+  { entityName: "módulo-[nombre]",
+    contents: ["Hallazgo: [descripción]"]
+  }
+])
+```
+
+### Relaciones a crear cuando aplique
+
+```
+{memory_prefix}_create_relations([
+  { from: "bug-[id]", relationType: "located_in", to: "archivo:[ruta]" },
+  { from: "bug-[id]", relationType: "caused_by", to: "hipótesis-[H[N]]" },
+  { from: "bug-[id]", relationType: "affects", to: "módulo-[nombre]" }
+])
+```
+
+### Marcar importancia al cierre de la investigación
+
+```
+{memory_prefix}_set_importance(entityName: "bug-[id]", importance: "critical")
+  → Bug de producción, datos corruptos, caída de servicio
+{memory_prefix}_set_importance(entityName: "bug-[id]", importance: "important")
+  → Bug funcional con workaround
+{memory_prefix}_set_importance(entityName: "bug-[id]", importance: "normal")
+  → Bug menor o cosmético
+{memory_prefix}_set_importance(entityName: "bug-[id]", importance: "deprecated")
+  → Hipótesis descartada, no hubo bug real
+```
+
+### Disparadores obligatorios de guardado
 
 - Hipótesis cerrada (CONFIRMADA / DESCARTADA / INCONCLUSA)
 - Causa raíz demostrada
@@ -327,15 +406,6 @@ memory_add_observations([
 - Archivo y línea exacta ubicados
 - Workaround temporal descubierto
 - Datos de tabla/columna relevantes para el bug
-
-**Relaciones a crear cuando aplique:**
-
-```
-memory_create_relations([
-  { from: "bug-[id]", relationType: "located_in", to: "archivo:[ruta]" },
-  { from: "bug-[id]", relationType: "caused_by", to: "hipótesis-[H[N]]" }
-])
-```
 
 No guardar información trivial ni suposiciones no confirmadas.
 

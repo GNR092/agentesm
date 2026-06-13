@@ -1,3 +1,4 @@
 .codesearch.db
 *.zip
 data/
+.search/
