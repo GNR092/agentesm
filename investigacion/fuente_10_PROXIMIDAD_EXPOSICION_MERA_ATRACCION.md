@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 10: Proximidad y Efecto de la Meras Exposición en la Atracción
 
 ## Fuente

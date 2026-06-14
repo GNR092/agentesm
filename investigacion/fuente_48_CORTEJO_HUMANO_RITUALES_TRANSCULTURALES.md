@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 48: Comportamiento de Cortejo Humano — Rituales Transculturales
 
 ## Fuente

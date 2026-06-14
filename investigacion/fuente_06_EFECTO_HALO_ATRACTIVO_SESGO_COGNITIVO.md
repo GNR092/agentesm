@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 06: Efecto Halo del Atractivo Físico — Sesgo Cognitivo
 
 ## Fuente

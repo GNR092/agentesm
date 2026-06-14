@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 27: Amor como Adicción — Sistema de Recompensa Cerebral
 
 ## Fuente

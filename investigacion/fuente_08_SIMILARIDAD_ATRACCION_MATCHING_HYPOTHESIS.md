@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 08: Principio de Similaridad y Matching Hypothesis en la Atracción
 
 ## Fuente

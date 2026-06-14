@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 36: Estatus Social, Recursos y Atractivo Masculino — Preferencias Femeninas
 
 ## Fuente

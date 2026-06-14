@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 46: Reciprocidad del Gusto (Reciprocal Liking) — Atracción Mutua
 
 ## Fuente

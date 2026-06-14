@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 11: Simetría Facial como Indicador de Salud Genética y Atracción
 
 ## Fuente

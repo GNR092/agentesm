@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 07: Tono de Voz y Atracción — Psicología Evolutiva
 
 ## Fuente

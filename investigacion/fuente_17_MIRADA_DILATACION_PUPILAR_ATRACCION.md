@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 17: Mirada, Dilatación Pupilar y Atracción Mutua
 
 ## Fuente

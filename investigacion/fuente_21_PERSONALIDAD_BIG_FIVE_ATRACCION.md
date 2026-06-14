@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 21: Personalidad y Atracción — El rol de los Cinco Grandes (Big Five)
 
 ## Fuente

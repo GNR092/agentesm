@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 43: Estrategias Sexuales Humanas — Diferencias en Apareamiento a Corto y Largo Plazo
 
 ## Fuente

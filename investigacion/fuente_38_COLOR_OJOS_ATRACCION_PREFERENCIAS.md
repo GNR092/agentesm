@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 38: Color de Ojos y Atracción — Preferencias y Rareza
 
 ## Fuente

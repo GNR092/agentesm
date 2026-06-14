@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 18: Preferencias de Altura en la Selección de Pareja
 
 ## Fuente

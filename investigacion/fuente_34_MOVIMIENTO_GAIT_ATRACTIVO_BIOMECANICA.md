@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 34: Modo de Andar (Gait) y Atractivo — Biomecánica del Movimiento
 
 ## Fuente

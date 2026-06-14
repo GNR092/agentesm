@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 47: Baile y Atractivo — Movimiento Corporal como Señal de Calidad de Pareja
 
 ## Fuente

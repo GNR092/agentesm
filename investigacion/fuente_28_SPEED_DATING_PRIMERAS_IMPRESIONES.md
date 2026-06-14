@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 28: Primeras Impresiones y Speed Dating — Psicología de la Atracción Rápida
 
 ## Fuente

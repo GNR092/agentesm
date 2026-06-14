@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 40: Valor de Pareja (Mate Value), Competencia Intrasexual y Mate Poaching
 
 ## Fuente

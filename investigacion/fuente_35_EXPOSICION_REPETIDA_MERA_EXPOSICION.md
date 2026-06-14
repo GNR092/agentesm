@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 35: Exposición Repetida y Atracción — Metaanálisis del Efecto de Mera Exposición
 
 ## Fuente

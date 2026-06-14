@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 14: Efecto del Color Rojo en la Atracción Romántica
 
 ## Fuente

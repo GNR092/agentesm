@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 16: Teoría del Apego en Relaciones Románticas Adultas
 
 ## Fuente

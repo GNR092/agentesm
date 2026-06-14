@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 30: Cultura, Medios y Estándares de Belleza — Influencia en la Atracción
 
 ## Fuente

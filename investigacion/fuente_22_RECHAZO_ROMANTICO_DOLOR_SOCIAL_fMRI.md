@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 22: Neurobiología del Rechazo Romántico — Estudios de fMRI
 
 ## Fuente

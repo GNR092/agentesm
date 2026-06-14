@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 33: Baby Schema (Kindchenschema) y Respuesta de Cuidado — Atracción por Rasgos Infantiles
 
 ## Fuente

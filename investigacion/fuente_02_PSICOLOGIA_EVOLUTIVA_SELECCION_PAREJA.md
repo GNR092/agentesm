@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 02: Psicología Evolutiva de la Selección de Pareja
 
 ## Fuente

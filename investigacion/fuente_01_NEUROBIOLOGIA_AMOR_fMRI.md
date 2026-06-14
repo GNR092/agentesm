@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # Fuente 01: Neurobiología del Amor Romántico — Estudios fMRI
 
 ## Fuente
