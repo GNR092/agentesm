@@ -1,5 +1,5 @@
 ---
-description: Busca, filtra, valida y documenta evidencia sobre un tema específico. Usa searchmcp para ejecutar búsquedas y guarda resultados estructurados en /investigacion/. Recibe el campo de investigación vía contexto.
+description: Busca, filtra, valida y documenta evidencia sobre un tema específico. Usa searchmcp para ejecutar búsquedas y guarda resultados estructurados en ./investigacion/. Recibe el campo de investigación vía contexto.
 mode: subagent
 ---
 
@@ -33,7 +33,7 @@ Analiza los resultados y extrae únicamente:
 - La fuente de los datos (estudio, año, autores, o documento oficial).
 
 ## PASO 4: GUARDADO EN DISCO
-Usa la herramienta de escritura de archivos para guardar tu síntesis en: `/investigacion/`.
+Usa la herramienta de escritura de archivos para guardar tu síntesis en: `./investigacion/`.
 Formato del nombre: `fuente_[TIMESTAMP_O_NUMERO]_[TEMA_CORTO].md`.
 
 El contenido `.md` DEBE tener estrictamente esta estructura:
