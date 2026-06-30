@@ -143,10 +143,17 @@ def cmd_session_id(_args):
 
 
 def parse_n(prev_n):
-    """Parsea 'DDMMMYYYY' minuscula. Devuelve date o None."""
+    """Parsea 'DDMMMYYYY' minuscula o ISO 'YYYY-MM-DD'. Devuelve date o None."""
     if not isinstance(prev_n, str) or len(prev_n) < 8:
         return None
-    s = prev_n.strip().lower()
+    s = prev_n.strip()
+    if len(s) == 10 and s[4] == "-" and s[7] == "-":
+        try:
+            yyyy, mm, dd = int(s[:4]), int(s[5:7]), int(s[8:10])
+            return dt.date(yyyy, mm, dd)
+        except ValueError:
+            return None
+    s = s.lower()
     if len(s) < 9:
         return None
     dd_str = s[:2] if s[1].isdigit() else s[:1]
@@ -252,6 +259,24 @@ def cmd_diff_days(args):
     return 0
 
 
+def cmd_format_date(args):
+    fecha, ok = parse_n_or_today(args.n)
+    if not ok:
+        print("ERR_INVALID_DATE")
+        return 3
+    print(format_n(fecha))
+    return 0
+
+
+def cmd_parse_date(args):
+    fecha = parse_n(args.n)
+    if fecha is None:
+        print("ERR_INVALID_DATE")
+        return 3
+    print(fecha.isoformat())
+    return 0
+
+
 def cmd_unavailable(_args):
     print("[timestamp_no_disponible]")
     return 0
@@ -314,6 +339,21 @@ def build_parser():
     p_dd.add_argument("a", nargs="?", default=None, help="Fecha A")
     p_dd.add_argument("b", nargs="?", default=None, help="Fecha B")
     p_dd.set_defaults(func=cmd_diff_days)
+
+    p_fd = sub.add_parser(
+        "format-date",
+        help="Convierte una fecha ISO 'YYYY-MM-DD' a canonico DDMMMYYYY",
+    )
+    p_fd.add_argument("n", nargs="?", default=None,
+                      help="Fecha ISO 'YYYY-MM-DD' (default: hoy)")
+    p_fd.set_defaults(func=cmd_format_date)
+
+    p_pd = sub.add_parser(
+        "parse-date",
+        help="Convierte una fecha canonica DDMMMYYYY a ISO 'YYYY-MM-DD'",
+    )
+    p_pd.add_argument("n", help="Fecha canonica DDMMMYYYY")
+    p_pd.set_defaults(func=cmd_parse_date)
 
     sub.add_parser(
         "unavailable",

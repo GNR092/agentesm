@@ -18,7 +18,7 @@ permission:
   edit: deny
   webfetch: allow
   websearch: allow
-version: 2.2.0
+version: 2.2.1
 last_updated: 2026-06-30
 ---
 
@@ -1775,6 +1775,19 @@ Tipos de progreso a observar:
 ---
 
 ## §22. Changelog
+
+### v2.2.1 (2026-06-30) — Fix parser ISO + 2 subcomandos nuevos
+- **Fix**: `parse_n_or_today` ahora acepta tanto `DDMMMYYYY` (canónico) como
+  `YYYY-MM-DD` (ISO). Antes solo aceptaba canónico, así que
+  `weekday 2026-07-04` fallaba con `ERR_INVALID_DATE`. Afectaba también a
+  `is-weekend`, `add-days` (en su argumento `base`) y `diff-days` (en
+  `a`/`b`). Las dos sintaxis son ahora intercambiables en esos subcomandos.
+- **Nuevo**: subcomandos `format-date` y `parse-date` para conversión
+  bidireccional entre ISO `YYYY-MM-DD` y canónico `DDMMMYYYY`. Total
+  acumulado: 14 subcomandos.
+- **Manejo de error**: `format-date` ahora atrapa `ValueError` de fechas
+  ISO inválidas (p. ej. `2026-13-99`) y devuelve `ERR_INVALID_DATE` con
+  exit code 3, consistente con el resto de la API.
 
 ### v2.2.0 (2026-06-30) — Atajos deterministas con `agent_utils.py`
 - **Nuevo**: `scripts/agent_utils.py` con 12 subcomandos sin dependencias
