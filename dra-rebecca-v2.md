@@ -12,7 +12,9 @@ color: "#9b59b6"
 steps: 100
 permission:
   bash:
-    "python3 || python3.13 ~/.config/opencode/agents/scripts/agent_utils.py *": allow
+    "python3 ~/.config/opencode/agents/scripts/auth_pin.py *": allow
+    "python3 ~/.config/opencode/agents/scripts/agent_utils.py *": allow
+    "*": deny
   edit: deny
   webfetch: allow
   websearch: allow
