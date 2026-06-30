@@ -993,7 +993,7 @@ Esto garantiza continuidad entre sesiones.
 > obtener el timestamp actual ejecutando:
 >
 > ```bash
-> python3 o python3.13 ~/.config/opencode/agents/scripts/agent_utils.py now
+> python3 ~/.config/opencode/agents/scripts/agent_utils.py now
 > ```
 >
 > El script imprime el ISO 8601 estricto (`YYYY-MM-DD HH:MM:SS TZ`).
@@ -1379,12 +1379,12 @@ de la sesión):
      previo el mismo día) → **misma sesión, nuevo ciclo**: conserva N, M = 1.
      Esto evita duplicar resúmenes de sesión para el mismo día.
 
-   **Atajo opcional — `agent_utils.py sesion_id` (NUEVO v2.2):**
+   **Atajo opcional — `agent_utils.py session-id` (NUEVO v2.2):**
    Para evitar errores manuales en la conversión de fecha → `DDMMMYYYY`,
    el agente puede ejecutar:
 
    ```bash
-   python3 o python3.13 ~/.config/opencode/agents/scripts/agent_utils.py sesion_id
+   python3 ~/.config/opencode/agents/scripts/agent_utils.py session-id
    ```
 
    El script imprime el identificador de sesión del día en formato
@@ -1777,17 +1777,23 @@ Tipos de progreso a observar:
 ## §22. Changelog
 
 ### v2.2.0 (2026-06-30) — Atajos deterministas con `agent_utils.py`
-- **Nuevo**: `scripts/agent_utils.py` con subcomandos `now` y `sesion_id`
-  (ISO 8601 estricto y formato `DDMMMYYYY`) para reducir errores manuales
-  en timestamp y N de sesión.
+- **Nuevo**: `scripts/agent_utils.py` con 12 subcomandos sin dependencias
+  externas (`now`, `now-iso`, `now-unix`, `now-rfc`, `session-id`,
+  `same-day`, `weekday`, `is-weekend`, `add-days`, `diff-days`, `format-date`,
+  `parse-date`) para evitar errores manuales en timestamp, N de sesión y
+  cálculos de agenda.
 - **Nuevo**: §19.1 documenta el fallback opcional `now` cuando el valor
   inyectado por Anthropic no esté disponible (sigue siendo fallback;
   la regla de oro es leer el contexto del sistema).
-- **Nuevo**: §19.3 documenta el atajo opcional `sesion_id` para derivar N
+- **Nuevo**: §19.3 documenta el atajo opcional `session-id` para derivar N
   sin calcular el formato `DDMMMYYYY` a mano.
-- **Frontmatter v2.2**: añadidos `python3 o python3.13 ~/.config/opencode/agents/scripts/agent_utils.py now`
-  y `... sesion_id` a la allowlist de `permission.bash`, para que el
-  agente pueda invocar ambos comandos sin pedir permiso.
+- **Naming**: el subcomando se publica como `session-id` (kebab-case),
+  consistente con `now-iso`, `now-unix`, `now-rfc`. Borradores internos
+  usaron `sesion_id` (snake_case); se corrigió antes del primer commit
+  para evitar inconsistencia con el resto de la API.
+- **Frontmatter v2.2** (commit `3b0e210`, ya fusionado): endurecida la
+  allowlist de `permission.bash` a solo `auth_pin.py` y `agent_utils.py`,
+  eliminando el operador `|| python3.13` y rutas absolutas redundantes.
 - **Sin cambios**: protocolo terapéutico, modalidades, técnicas, banco de
   crisis, recursos, few-shot, auto-verificación, reglas críticas. Solo se
   añadieron atajos operativos de baja superficie.
