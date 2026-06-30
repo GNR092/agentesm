@@ -142,6 +142,23 @@ def cmd_session_id(_args):
     return 0
 
 
+_MESES_CANONICOS = {
+    "enero": 1, "ene": 1,
+    "febrero": 2, "feb": 2,
+    "marzo": 3, "mar": 3,
+    "abril": 4, "abr": 4,
+    "mayo": 5, "may": 5,
+    "junio": 6, "jun": 6,
+    "julio": 7, "jul": 7,
+    "agosto": 8, "ago": 8,
+    "septiembre": 9, "set": 9, "sept": 9,
+    "octubre": 10, "oct": 10,
+    "noviembre": 11, "nov": 11,
+    "diciembre": 12, "dic": 12,
+}
+_MESES_CANONICOS_SORTED = sorted(_MESES_CANONICOS, key=len, reverse=True)
+
+
 def parse_n(prev_n):
     """Parsea 'DDMMMYYYY' minuscula o ISO 'YYYY-MM-DD'. Devuelve date o None."""
     if not isinstance(prev_n, str) or len(prev_n) < 8:
@@ -158,10 +175,9 @@ def parse_n(prev_n):
         return None
     dd_str = s[:2] if s[1].isdigit() else s[:1]
     rest = s[len(dd_str):]
-    meses_sorted = sorted(MESES_ES, key=len, reverse=True)
     mes_encontrado = None
     mes_len = 0
-    for mes in meses_sorted:
+    for mes in _MESES_CANONICOS_SORTED:
         if rest.startswith(mes):
             mes_encontrado = mes
             mes_len = len(mes)
@@ -173,7 +189,7 @@ def parse_n(prev_n):
         return None
     try:
         dd = int(dd_str)
-        mm = MESES_ES_REV[mes_encontrado]
+        mm = _MESES_CANONICOS[mes_encontrado]
         yyyy = int(yyyy_str)
         return dt.date(yyyy, mm, dd)
     except (ValueError, KeyError):
