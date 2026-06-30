@@ -11,9 +11,20 @@ Subcomandos:
   same-day N       -> mismo_dia | dia_diferente | ERR_INVALID_N
   weekday [N]      -> lunes|martes|miercoles|jueves|viernes|sabado|domingo
   is-weekend [N]   -> si | no
-  add-days K [B]   -> DDMMMYYYY  (B = DDMMMYYYY base, default hoy)
-  diff-days A B    -> entero con signo (B - A)
+  add-days K [B]   -> DDMMMYYYY  (B = DDMMMYYYY o ISO o relativa, default hoy)
+  diff-days A B    -> entero con signo (B - A)  (A,B tambien aceptan ISO o relativa)
+  format-date [N]  -> DDMMMYYYY  (N = ISO, canonico o relativa; default hoy)
+  parse-date N     -> YYYY-MM-DD  (N = DDMMMYYYY canonico)
+  relative-date R  -> DDMMMYYYY  (R = frase relativa en espanol)
+  next-weekday R   -> DDMMMYYYY  (R = lunes|martes|...  o  'proximo lunes')
   unavailable      -> [timestamp_no_disponible]
+
+Frases relativas aceptadas (es, sin acentos obligatorios):
+  hoy | ayer | anteayer/antier | manana | pasado manana
+  hace N (dia|dias|semana|semanas|mes|meses)
+  en   N (dia|dias|semana|semanas|mes|meses)
+  proximo|proxima <dia_semana>   -> siguiente ocurrencia estrictamente futura
+  pasado|pasada <dia_semana>     -> ultima ocurrencia estrictamente pasada
 
 Zona horaria: detecta time.tzname del sistema (respeta env var TZ en
 libc); si no esta disponible, cae a UTC. Sin archivos persistentes.
@@ -196,14 +207,159 @@ def parse_n(prev_n):
         return None
 
 
+def _strip_accents(s):
+    """Quita acentos para matching tolerante: manana == mañana."""
+    return (
+        s.replace("á", "a").replace("é", "e").replace("í", "i")
+        .replace("ó", "o").replace("ú", "u").replace("ü", "u")
+    )
+
+
+_SYNONYMS = {
+    "anteayer": -2, "antier": -2, "antes de ayer": -2, "antesdeayer": -2,
+    "ayer": -1,
+    "hoy": 0,
+    "manana": 1, "mañana": 1,
+    "pasado manana": 2, "pasadomanana": 2, "pasado mañana": 2,
+}
+
+_DIAS_REV = {
+    "lunes": 0, "martes": 1, "miercoles": 2, "miércoles": 2,
+    "jueves": 3, "viernes": 4, "sabado": 5, "sábado": 5, "domingo": 6,
+}
+
+_UNIDADES = {
+    "dia": 1, "dias": 1, "día": 1, "días": 1,
+    "semana": 7, "semanas": 7,
+    "mes": 30, "meses": 30,
+    "anio": 365, "anios": 365, "año": 365, "años": 365,
+}
+
+
+def _add_months(fecha, n):
+    """Suma N meses a fecha clampeando al último día del mes destino."""
+    total_month = fecha.month - 1 + n
+    year = fecha.year + total_month // 12
+    month = total_month % 12 + 1
+    import calendar
+    last_day = calendar.monthrange(year, month)[1]
+    day = min(fecha.day, last_day)
+    return dt.date(year, month, day)
+
+
+def _parse_unit_offset(parts, today):
+    """Procesa 'hace N <unidad>' o 'en N <unidad>'. parts = tokens."""
+    if not parts:
+        return None
+    sign_word = parts[0]
+    if sign_word not in ("hace", "en"):
+        return None
+    sign = -1 if sign_word == "hace" else 1
+    if len(parts) < 2:
+        return None
+    num_word = parts[1]
+    num = _parse_number_word(num_word)
+    if num is None or num < 1:
+        return None
+    if len(parts) == 2:
+        unit = "dia"
+    elif len(parts) == 3:
+        unit = _strip_accents(parts[2].lower())
+        if unit not in _UNIDADES:
+            return None
+    else:
+        return None
+    delta_days = num * _UNIDADES[unit]
+    if unit in ("mes", "meses"):
+        return _add_months(today, sign * num)
+    return today + dt.timedelta(days=sign * delta_days)
+
+
+def _parse_number_word(word):
+    """Convierte '3', 'tres', 'una', 'un', etc. a entero. None si falla."""
+    w = word.lower()
+    table = {
+        "un": 1, "una": 1, "uno": 1,
+        "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5,
+        "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10,
+        "once": 11, "doce": 12, "quince": 15, "veinte": 20,
+    }
+    if w in table:
+        return table[w]
+    if w.isdigit():
+        return int(w)
+    return None
+
+
+def parse_rel_es(frase, today=None):
+    """Parsea frase relativa en espanol. Devuelve date o None.
+
+    Frases soportadas: ver docstring del modulo. today = fecha de
+    referencia (default: hoy local del sistema).
+    """
+    if not frase or not isinstance(frase, str):
+        return None
+    if today is None:
+        today = now_local()[0].date()
+    s = _strip_accents(frase.strip().lower())
+    s = " ".join(s.split())
+
+    if s in _SYNONYMS:
+        return today + dt.timedelta(days=_SYNONYMS[s])
+
+    parts = s.split()
+    if parts[0] in ("hace", "en"):
+        return _parse_unit_offset(parts, today)
+
+    if parts[0] in ("proximo", "proxima", "pasado", "pasada") and len(parts) == 2:
+        direction = parts[0]
+        dia_key = parts[1]
+        target_wd = _DIAS_REV.get(dia_key)
+        if target_wd is None:
+            return None
+        current_wd = today.weekday()
+        if direction in ("proximo", "proxima"):
+            delta = (target_wd - current_wd) % 7
+            if delta == 0:
+                delta = 7
+            return today + dt.timedelta(days=delta)
+        else:
+            delta = (current_wd - target_wd) % 7
+            if delta == 0:
+                delta = 7
+            return today - dt.timedelta(days=delta)
+
+    if len(parts) == 1 and parts[0] in _DIAS_REV:
+        target_wd = _DIAS_REV[parts[0]]
+        current_wd = today.weekday()
+        delta = (target_wd - current_wd) % 7
+        if delta == 0:
+            delta = 7
+        return today + dt.timedelta(days=delta)
+
+    return None
+
+
 def parse_n_or_today(arg):
-    """Parsea 'DDMMMYYYY'; si arg es None o vacio, devuelve hoy."""
+    """Parsea 'DDMMMYYYY', ISO 'YYYY-MM-DD' o frase relativa es.
+
+    Cadena de fallback: canonico -> ISO -> relativa -> None.
+    Si arg es None o vacio, devuelve hoy.
+    """
     if not arg:
         return now_local()[0].date(), True
     parsed = parse_n(arg)
-    if parsed is None:
-        return None, False
-    return parsed, True
+    if parsed is not None:
+        return parsed, True
+    try:
+        iso = dt.date.fromisoformat(arg.strip())
+        return iso, True
+    except (ValueError, TypeError):
+        pass
+    rel = parse_rel_es(arg)
+    if rel is not None:
+        return rel, True
+    return None, False
 
 
 def format_n(fecha):
@@ -293,6 +449,54 @@ def cmd_parse_date(args):
     return 0
 
 
+def cmd_relative_date(args):
+    """Convierte frase relativa en espanol a canonico DDMMMYYYY."""
+    if not args.r:
+        print("ERR_INVALID_DATE")
+        return 3
+    fecha = parse_rel_es(args.r)
+    if fecha is None:
+        print("ERR_INVALID_DATE")
+        return 3
+    print(format_n(fecha))
+    return 0
+
+
+def cmd_next_weekday(args):
+    """Convierte 'proximo lunes' o 'lunes' (dia de la semana) a fecha canonica.
+
+    Acepta 'lunes'|'proximo lunes'|'pasado lunes'. Acepta tildes.
+    """
+    if not args.r:
+        print("ERR_INVALID_DATE")
+        return 3
+    s = _strip_accents(args.r.strip().lower())
+    s = " ".join(s.split())
+    if s.startswith("proximo ") or s.startswith("proxima "):
+        fecha = parse_rel_es(s)
+        if fecha is None:
+            print("ERR_INVALID_DATE")
+            return 3
+        print(format_n(fecha))
+        return 0
+    if s.startswith("pasado ") or s.startswith("pasada "):
+        fecha = parse_rel_es(s)
+        if fecha is None:
+            print("ERR_INVALID_DATE")
+            return 3
+        print(format_n(fecha))
+        return 0
+    if s in _DIAS_REV:
+        fecha = parse_rel_es("proximo " + s)
+        if fecha is None:
+            print("ERR_INVALID_DATE")
+            return 3
+        print(format_n(fecha))
+        return 0
+    print("ERR_INVALID_DATE")
+    return 3
+
+
 def cmd_unavailable(_args):
     print("[timestamp_no_disponible]")
     return 0
@@ -370,6 +574,18 @@ def build_parser():
     )
     p_pd.add_argument("n", help="Fecha canonica DDMMMYYYY")
     p_pd.set_defaults(func=cmd_parse_date)
+
+    p_rd = sub.add_parser(
+        "relative-date",
+        help="Convierte frase relativa en espanol a DDMMMYYYY")
+    p_rd.add_argument("r", help="Frase relativa (ej. ayer, hace 3 dias)")
+    p_rd.set_defaults(func=cmd_relative_date)
+
+    p_nw = sub.add_parser(
+        "next-weekday",
+        help="Resuelve 'proximo lunes' o 'lunes' a DDMMMYYYY")
+    p_nw.add_argument("r", help="Dia (ej. lunes, proximo viernes, pasado lunes)")
+    p_nw.set_defaults(func=cmd_next_weekday)
 
     sub.add_parser(
         "unavailable",
