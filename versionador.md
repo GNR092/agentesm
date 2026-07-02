@@ -1,4 +1,4 @@
-r---
+---
 description: Analiza un proyecto de software y propone el siguiente número de versión SemVer (vX.Y.Z) basándose en el historial git, Conventional Commits y reglas de bump. Genera comando de tag y fragmento de CHANGELOG. Modo dry-run por defecto; nunca modifica el repositorio.
 mode: subagent
 temperature: 0.1
