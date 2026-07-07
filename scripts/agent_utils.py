@@ -153,6 +153,25 @@ def cmd_session_id(_args):
     return 0
 
 
+def cmd_session_compare(args):
+    """Compara un N previo (sesion previa) con la fecha actual.
+
+    Salida: 'misma' | 'nueva' | 'ERR_INVALID_N'
+    Exit:  0 en ok, 2 en N invalido.
+    """
+    prev_n = getattr(args, "prev_n", None)
+    if not prev_n:
+        print("ERR_INVALID_N")
+        return 2
+    prev_date = parse_n(prev_n)
+    if prev_date is None:
+        print("ERR_INVALID_N")
+        return 2
+    ahora, _ = now_local()
+    print("misma" if prev_date == ahora.date() else "nueva")
+    return 0
+
+
 _MESES_CANONICOS = {
     "enero": 1, "ene": 1,
     "febrero": 2, "feb": 2,
@@ -526,6 +545,13 @@ def build_parser():
     )
     p_sd.add_argument("prev_n", help="N previo en formato DDMMMYYYY")
     p_sd.set_defaults(func=cmd_same_day)
+
+    p_sc = sub.add_parser(
+        "session-compare",
+        help="Compara un N previo (sesion) con la fecha actual: misma | nueva",
+    )
+    p_sc.add_argument("prev_n", help="N previo en formato DDMMMYYYY o ISO YYYY-MM-DD")
+    p_sc.set_defaults(func=cmd_session_compare)
 
     p_wd = sub.add_parser(
         "weekday",
