@@ -2,36 +2,45 @@
 
 Índice de los agentes definidos en este directorio. Cada archivo `.md` aquí es un agente invocable por opencode.
 
+## Descripción del repositorio
+
+Este repo contiene una colección de agentes especializados para operaciones de ingeniería de software, investigación, testing y versionado. Los agentes están organizados en dos categorías principales:
+
+- **Agentes primary** — equipos principales que procesan tareas de forma autónoma desde el estado inicial hasta la finalización. Trabajan directamente bajo solicitud del usuario y pueden modificar código, generar cambios, ejecutar tests y aplicar los resultados de investigación.
+
+- **Subagentes** — ayudantes especializados para tareas específicas (`@git`, `@docker`, `@versionador`, `@Investigador-Cientifico`, `@Investigador-Secundario`). Se invocan desde agentes primary o directamente por el usuario para ejecutar comandos de bajo nivel, introspección o validación de evidencia.
+
+Los agentes siguen un flujo de trabajo estructurado (debug → plan → fix → test) para el ciclo de corrección de errores, y un flujo de trabajo separado para features/mejoras. Todos los agentes mantienen un estado persistente utilizando un knowledge graph unificado, lo que permite una ejecución consistente y transparente entre sesiones.
+
 ## Estructura del repositorio
 
-- `*.md` — definición de agentes (uno por archivo).
-- `.codesearch.db/` — base del índice semántico local (ignorada por git).
-- `.search/` — caché de búsquedas web (ignorada).
-- `investigacion/` — artefactos generados por los agentes investigadores (ignorada).
-- `data/` — datos auxiliares (ignorada).
-- `scripts/` — utilidades auxiliares.
+La estructura física del repo se organiza en:
 
-## Reglas globales (aplican a todos los agentes de este repo)
+```
+*.md                       # Definiciones de agentes (uno por archivo)
+.codesearch.db/            # Índice de búsqueda semántica (ignorado)
+.search/                   # Caché de búsquedas web (ignorado)
+investigacion/            # Artefactos generados por los agentes investigadores (ignorado)
+data/                     # Datos auxiliares (ignorado)
+scripts/                   # Utilidades auxiliares
+```
 
-1. **No inventar librerías.** Verificar `package.json`, `Cargo.toml`, `pyproject.toml`, `composer.json`, `pom.xml` antes de usar una dependencia.
-2. **Respetar convenciones del código existente.** No reformatear ni renombrar sin que se pida.
-3. **Sin comentarios no solicitados.** No añadir comentarios al código a menos que el usuario lo pida.
-4. **Sin commits implícitos.** Solo el agente `@git` commitea, y solo cuando el usuario lo solicite.
-5. **Cambios scoped.** Cualquier cambio fuera del alcance declarado → registro de observaciones, no ejecución.
-6. **Cero alucinaciones.** Si una fuente no se puede verificar → marcar como `unknown`, no inferir.
-7. **Idioma.** Español por defecto. Mantener respuestas concisas; el detalle va en artefactos o memoria.
+Todas las definiciones de agentes se encuentran bajo `~/.config/opencode/agents/` localmente, y este README.md sirve como índice y documentación de referencia principal.
 
-## Modos
+## Flujos de trabajo entre agentes
 
-| Modo | Significado |
-|------|-------------|
-| `primary` | Agente principal, se invoca directamente como `@nombre` o por defecto. |
-| `subagent` | Agente auxiliar, se delega desde un agente primary o se invoca como `@nombre`. |
+- **Corrección de errores**: `@debug` → `@agente-plan` (modo A) → `@fix` → `@test`
+- **Mejoras/Features**: `@agente-plan` (modo B) → `@fix` → `@test`
+- **Investigación científica**:
+  - Atracción humana → `@Investigador-Cientifico`
+  - Otro tema → `@Investigador-Secundario`
+- **Operaciones de infraestructura**: `@docker`, `@git`
+- **Versionado**: `@versionador` (análisis) → usuario decide → `@git` (tag + push)
 
-## Agentes primary
+## Agentes primarios
 
-| Agente | Archivo | Descripción |
-|--------|---------|-------------|
+| Agente | Archivo | Función |
+|--------|---------|----------|
 | `@code` | [`code.md`](code.md) | Asistente general de ingeniería de software. Ejecuta tareas, escribe código, sigue convenciones. Breve y directo. |
 | `@debug` | [`debug.md`](debug.md) | Investigación estricta de fallos. Solo analiza, no modifica código. Memoria persistente, máximo 3 hipótesis, una a la vez. |
 | `@fix` | [`fix.md`](fix.md) | Aplica planes ya aprobados (fixes o features). Modifica código solo dentro del alcance del plan. |
@@ -39,27 +48,23 @@
 | `@agente-plan` | [`agente-plan.md`](agente-plan.md) | Planificación. Modo A: plan de fix desde causa raíz. Modo B: plan de feature/mejora. No modifica código. |
 | `@cambio-quirurgico` | [`cambio-quirurgico.md`](cambio-quirurgico.md) | Ejecuta exactamente un cambio puntual declarado. No auto-corrige ni expande scope. Hallazgos fuera de alcance → observaciones. |
 
-## Agentes subagent
+## Agentes subagentes
 
-| Agente | Archivo | Descripción |
-|--------|---------|-------------|
-| `@git` | [`git.md`](git.md) | Operaciones Git: commits, push, pull, merge, rebase, tags. Mensajes en español sin prefijos. Pide confirmación reforzada para operaciones destructivas. |
-| `@docker` | [`docker.md`](docker.md) | Docker y Docker Compose. Inspección primero, confirmación reforzada para `down -v`, `prune`, `rm`, `rmi`, etc. |
-| `@versionador` | [`versionador.md`](versionador.md) | Propone el siguiente número SemVer desde el historial git y Conventional Commits. Solo inspección, dry-run obligatorio. |
-| `@Investigador-Cientifico` | [`Investigador-Cientifico.md`](Investigador-Cientifico.md) | Investigación científica sobre psicología, neurobiología y sociología de la atracción humana. Solo fuentes peer-reviewed, académicas `.edu` o `.gov`. |
-| `@Investigador-Secundario` | [`Investigador-Secundario.md`](Investigador-Secundario.md) | Investigación científica sobre un tema indicado por contexto. Mismo rigor que `@Investigador-Cientifico`. |
+| Agente | Archivo | Función |
+|--------|---------|----------|
+| `@git` | [`git.md`](git.md) | Operaciones Git. Commits, push, pull, merge, rebase, tags. Mensajes en español sin prefijos. Operaciones de alto riesgo requieren confirmación. |
+| `@docker` | [`docker.md`](docker.md) | Docker y Docker Compose. Inspección primero; confirmación reforzada para `down -v`, `prune`, `rm`, `rmi`, etc. |
+| `@versionador` | [`versionador.md`](versionador.md) | Propone versión SemVer desde el historial git. Solo inspección; dry-run obligatorio. |
+| `@Investigador-Cientifico` | [`Investigador-Cientifico.md`](Investigador-Cientifico.md) | Investigación científica sobre atracción humana (psicología, neurobiología, sociología). Solo fuentes peer-reviewed, académicas `.edu`/`.gov`. |
+| `@Investigador-Secundario` | [`Investigador-Secundario.md`](Investigador-Secundario.md) | Investigación científica sobre cualquier otro campo de tema dado. Mismo rigor que `@Investigador-Cientifico`. |
 
-## Permisos especiales
+## Permisos y seguridad
 
-Solo algunos agentes tienen permisos `permission:` declarados. Todos los demás operan con los permisos por defecto del usuario.
+Los permisos son específicos por herramienta. Muchos agentes confían en `read/glob/grep` y usan `bash` selectivamente con `ask` para acciones de alto riesgo (por ejemplo, `push --force`, `down -v`, `rm`, `rmi`, `exec --privileged`).
 
-| Agente | Permisos relevantes |
-|--------|---------------------|
-| `@git` | `git *` permitido; `rebase`, `push --force`, `push --mirror`, `branch -D`, `tag -d/-f`, `reset`, `clean`, `commit --amend`, `--no-verify` requieren `ask`. |
-| `@docker` | `docker *` y `docker compose *` permitidos; `down -v`, `prune`, `rm`, `rmi`, `kill`, `volume rm`, `network rm`, `exec --privileged`, `image prune`, `build --push` requieren `ask`. |
-| `@versionador` | Solo lectura: `git log/status/tag -l/show/diff/rev-parse/describe` permitidos. `edit`, `git push`, `git tag -d/-f`, `webfetch` denegados. Todo lo demás `ask`. |
+## Skills
 
-## Skills usadas por los agentes
+Los agentes usan habilidades pre-existentes (`agent-strategies`, `code-search`, `memory-sync`, `token-efficient-workflow`, etc.) en lugar de intentar implementar lógica personalizada. La mezcla de skills se elige según el propósito de cada agente.
 
 | Skill | Agentes que la invocan |
 |-------|------------------------|
@@ -71,20 +76,24 @@ Solo algunos agentes tienen permisos `permission:` declarados. Todos los demás 
 | `postgresqldb` | `@code` (guía PostgreSQL) |
 | `ci4-expert` | `@code` (CodeIgniter 4) |
 | `interface-design` | `@code` (dashboards, admin panels) |
-| `docx-generator` | `@code` (documentos `.docx`/`.pdf`) |
+| `docx-generator` | `@code` (documentos .docx/.pdf) |
 | `erp-e2e-tester` | `@code` (pruebas E2E módulo de compras) |
 
-## Flujos de trabajo entre agentes
+## Modos
 
-- **Bug fix**: `@debug` → `@agente-plan` (modo A) → `@fix` → `@test`.
-- **Feature/mejora**: `@agente-plan` (modo B) → `@fix` → `@test`.
-- **Cambio puntual bien definido**: `@cambio-quirurgico`.
-- **Investigación científica**:
-  - Atracción humana → `@Investigador-Cientifico`.
-  - Otro tema → `@Investigador-Secundario`.
-- **Release / versionado**: `@versionador` (análisis) → humano decide → `@git` (tag + push).
-- **Operaciones de infraestructura**: `@docker`, `@git`.
+- **primary**: Agente principal — inicia una tarea completa de forma autónoma.
+- **subagent**: Agente especializado — realiza subtareas específicas bajo la dirección de un agente principal.
 
-## Convenciones de memoria
+## Uso típico
 
-Los agentes primary (`@debug`, `@fix`, `@test`, `@agente-plan`) usan `{memory_prefix}*` para sincronizar hallazgos, planes y resultados con el knowledge graph persistente. `@cambio-quirurgico` y `@code` pueden usarlo opcionalmente.
+1. Proporciona un objetivo al repo (por ejemplo, "implementar la autenticación OAuth2").
+2. El workflow asigna automáticamente los roles:
+   - `@debug` → investiga la superficie del código actual.
+   - `@agente-plan` → elabora un plan de feature (Modo B).
+   - `@fix` → aplica el plan.
+   - `@test` → valida el fix si es requerido.
+3. Puedes invocar agentes específicos directamente (por ejemplo, `@git status`, `@docker compose ps`).
+
+## Autor
+
+Agentes desarrollados por los contribuidores del repo.
