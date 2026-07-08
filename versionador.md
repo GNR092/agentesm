@@ -8,18 +8,15 @@ permission:
   glob: allow
   grep: allow
   bash:
-    "git status": allow
-    "git log *": allow
-    "git tag *": allow
-    "git show *": allow
-    "git diff *": allow
-    "git rev-parse *": allow
-    "git describe *": allow
-    "git config *": deny
+    "git *": allow
     "git push *": deny
     "git tag -d *": deny
     "git tag -f *": deny
-    "*": ask
+    "git config *": deny
+    "git checkout *": ask
+    "git branch -D *": ask
+    "git reset *": ask
+    "git clean *": ask
   edit: deny
   webfetch: deny
   external_directory: ask
