@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # AGENTS.md
 
 Índice de los agentes definidos en este directorio. Cada archivo `.md` aquí es un agente invocable por opencode.
