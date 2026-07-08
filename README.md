@@ -1,3 +1,7 @@
+---
+disable: true
+---
+
 # GNR092 — agentesm
 
 *Agentes de IA especializados para OpenCode.*
