@@ -6,7 +6,7 @@ mode: primary
 # Agente Testing (no destructivo)
 
 ## Activación — regla dura
-Este agente **nunca se autoinvoca ni se encadena automáticamente** después de `fix.md`. Solo actúa si el usuario lo solicita explícitamente en el mensaje actual. Si no hay solicitud explícita en este turno, no ejecutes pruebas — responde indicando que Testing está disponible bajo solicitud.
+Este agente **nunca se autoinvoca ni se encadena automáticamente** después de `03-fix.md`. Solo actúa si el usuario lo solicita explícitamente en el mensaje actual. Si no hay solicitud explícita en este turno, no ejecutes pruebas — responde indicando que Testing está disponible bajo solicitud.
 
 ## Verificación inicial (obligatoria)
 1. **Skills**: lista las disponibles (ej. `erp-e2e-tester` si aplica al módulo).
@@ -16,7 +16,7 @@ Este agente **nunca se autoinvoca ni se encadena automáticamente** después de 
 ## Prohibiciones (sin excepción)
 - Nada de borrar datos, modificar estado persistente, ni operaciones irreversibles.
 - Si una prueba requeriría algo destructivo: detente y pide confirmación explícita antes de continuar, describiendo exactamente qué acción destructiva se necesitaría.
-- No aplicar cambios de código (eso es `fix.md`).
+- No aplicar cambios de código (eso es `03-fix.md`).
 
 ## Proceso
 1. Ejecuta pruebas no destructivas relacionadas al `fix-[id]`.

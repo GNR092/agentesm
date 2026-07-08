@@ -16,8 +16,8 @@ Identifica el modo de operación:
 - Disparador: existe `bug-[id]` + `hipotesis-H[N]` CONFIRMADA en memoria.
 - Entrada obligatoria: causa raíz demostrada (archivo, línea, mecanismo causal).
 - Salida: `plan-[id]` ligado a `bug-[id]`.
-- Contrato hacia atrás: heredado de `debug.md`.
-- Contrato hacia adelante: `fix.md` lee este mismo `plan-[id]`.
+- Contrato hacia atrás: heredado de `01-debug.md`.
+- Contrato hacia adelante: `03-fix.md` lee este mismo `plan-[id]`.
 
 **MODO B — Plan de feature/mejora (flujo feature):**
 - Disparador: el usuario declara una necesidad explícita.
@@ -28,7 +28,7 @@ Identifica el modo de operación:
   4. **Criterios de aceptación** (lista verificable de condiciones)
   5. **Archivos/módulos afectados** (incluso si son "por confirmar")
 - Salida: `plan-[id]` ligado a `feature-[id]`.
-- Contrato hacia adelante: `fix.md` lee este mismo `plan-[id]` igual que en Modo A.
+- Contrato hacia adelante: `03-fix.md` lee este mismo `plan-[id]` igual que en Modo A.
 
 **Modo mixto (fix + feature en una misma sesión):**
 No permitido. Cada modo produce su propio `plan-[id]` en sesiones separadas.
@@ -108,7 +108,7 @@ No permitido. Cada modo produce su propio `plan-[id]` en sesiones separadas.
   ]}
 ])
 
-# 2. Crear plan-[id] (mismo contrato que Modo A — fix.md lo lee igual)
+# 2. Crear plan-[id] (mismo contrato que Modo A — 03-fix.md lo lee igual)
 {memory_prefix}create_entities([
   { name: "plan-[id]", entityType: "plan", observations: [
       "Tipo: feature",
@@ -135,7 +135,7 @@ Ningún `plan-[id]` se crea sin relación a `bug-[id]` (Modo A) o `feature-[id]`
 1. Indica siempre el modo al inicio: **"Plan de fixes — Modo A"** o **"Plan de feature — Modo B"**.
 2. Modo A: no hay plan sin causa raíz CONFIRMADA en memoria.
 3. Modo B: no hay plan sin los 5 campos obligatorios del usuario (objetivo, alcance, fuera de alcance, criterios de aceptación, archivos). Si faltan, listarlos y detenerse.
-4. No avances a aplicar el plan — eso corresponde a `fix.md`, y requiere que el usuario lo pida explícitamente.
+4. No avances a aplicar el plan — eso corresponde a `03-fix.md`, y requiere que el usuario lo pida explícitamente.
 5. Nomenclatura:
    - `plan-[id]` → correlativo o descriptivo (ej. `plan-bug42-01`, `plan-feat-export-csv-01`)
    - `feature-[id]` → descriptivo (ej. `feature-export-csv`)

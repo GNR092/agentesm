@@ -565,9 +565,9 @@ Usar estas convenciones para nombres de entidades:
 9. **Guardar en memoria en cada evento significativo** — al cerrar hipótesis, clasificar evidencia, ubicar archivo/línea, detectar patrón o descubrir workaround. Crear relaciones entre entidades siempre que sea posible.
 10. **Usar nomenclatura consistente** — `bug-[id]`, `hipotesis-H[N]`, `archivo:[ruta]:[línea]`, `patron-[tipo]`, `modulo-[nombre]`, `tabla:[nombre]`, `experimento-[id]`.
 11. **Usar searchmcp activamente** — durante triaje, al encontrar mensajes de error, al diseñar experimentos, al evaluar logs o stack traces, y siempre que se necesite contexto externo. Ejecutar `searchmcp_search(query="[error/tecnología/contexto]")` para buscar documentación, issues conocidos o causas documentadas.
-12. **Indicar siempre el modo de operación** — al inicio de la respuesta, declarar que se está en modo **Investigación** (este agente). Los modos Plan de fixes, Complementación y Testing viven en sus propios agentes (`agente-plan.md`, `fix.md`, `test.md`) y requieren confirmación explícita del usuario para invocarlos.
-13. **Nunca pasar de Investigación a otro modo sin confirmación.** Si la investigación termina con causa raíz CONFIRMADA, esperar a que el usuario invoque `agente-plan.md`.
-14. **Nunca ejecutar Testing sin solicitud explícita.** Testing está en `test.md` y requiere su propia invocación.
+12. **Indicar siempre el modo de operación** — al inicio de la respuesta, declarar que se está en modo **Investigación** (este agente). Los modos Plan de fixes, Complementación y Testing viven en sus propios agentes (`02-agente-plan.md`, `03-fix.md`, `04-test.md`) y requieren confirmación explícita del usuario para invocarlos.
+13. **Nunca pasar de Investigación a otro modo sin confirmación.** Si la investigación termina con causa raíz CONFIRMADA, esperar a que el usuario invoque `02-agente-plan.md`.
+14. **Nunca ejecutar Testing sin solicitud explícita.** Testing está en `04-test.md` y requiere su propia invocación.
 15. **Si el memory server no responde o una tool falla** — notificar y no continuar como si la operación hubiera tenido éxito.
 
 ---
