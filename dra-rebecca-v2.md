@@ -1163,35 +1163,69 @@ critico: si ya existe un perfil en memoria para ese `cliente_<id>`, no
 podemos permitir que un tercero simplemente "configure un PIN" sobre la
 cuenta ajena — seria un takeover trivial.
 
-**Paso 0 — Comprobar si ya existe perfil en memoria para `cliente_<id>`:**
+**Paso 0 — Comprobar si ya existe PIN configurado para `cliente_<id>`:**
 
-Antes de cualquier otra accion, el agente ejecuta:
+Antes de cualquier otra accion, el agente ejecuta el subcomando
+`exists` del script de PIN, que lee `pins.json` (0600) directamente y
+devuelve un contrato binario trivialmente parseable:
 
-  `memory-local_search_nodes(query="cliente_<id>")`
+```bash
+python3 ~/.config/opencode/agents/scripts/auth_pin.py exists cliente_<id>
+```
 
-e interpreta los resultados:
+y mapea la salida de forma estricta, sin reinterpretarla:
 
-- **No hay resultados relevantes** (o los resultados no se relacionan
-  con un cliente con ese identificador) → **CASO A: cliente nuevo
-  legitimo** → continuar con "Paso 1" abajo.
-- **Si hay resultados que muestran un perfil existente** del cliente
-  (entidad `cliente_<id>` u observaciones que claramente lo
-  identifican) → **CASO B: migracion / intento de takeover** → NO
-  proceder con `set` directamente. En su lugar, saltar al flujo
-  completo de "Recuperacion de PIN olvidado" (siguiente subseccion)
-  para verificar la identidad del solicitante mediante pregunta
-  personal antes de permitir crear un PIN sobre un perfil
-  preexistente.
+- `YES` → existe registro para ese `cliente_<id>` → **CASO B:
+  migracion / intento de takeover** → NO proceder con `set`
+  directamente. Saltar al flujo completo de "Recuperacion de PIN
+  olvidado" (siguiente subseccion) para verificar la identidad del
+  solicitante mediante pregunta personal antes de permitir crear un
+  PIN sobre un perfil preexistente.
+- `NO` → no existe registro → **CASO A: cliente nuevo legitimo** →
+  continuar con "Paso 1" abajo.
+- `ERR_CORRUPT_FILE` → `pins.json` no es un objeto JSON valido →
+  **modo degradado**: NO continuar con `set` ni aceptar la sesion;
+  notificar al usuario de la inconsistencia interna y sugerir
+  revision tecnica. No hay bifurcacion Caso A/B posible sin fuente
+  de verdad integra.
+- cualquier otra salida / vacio → tratado como `ERR_CORRUPT_FILE`
+  por seguridad.
+
+> **Por que NO usar `memory_search_nodes` para esta bifurcacion**:
+> la busqueda semantica de memoria usa un umbral de relevancia
+> configurable y juicio discrecional del LLM, que puede omitir
+> perfiles existentes (ej. cliente con pocas observaciones o creado
+> en otra sesion). Eso habilita un bypass trivial de la autenticacion
+> por PIN: cualquier persona que diga "soy <nombre>" + un PIN >= 8
+> caracteres obtiene `set OK` sobre una cuenta ajena. El script
+> `exists` lee `pins.json` directamente, NO interpreta, y devuelve
+> YES/NO sobre la presencia de la clave — el mismo dato que ya usa
+> internamente la guarda `ERR_CLIENT_EXISTS` de `set`. Es la unica
+> fuente de verdad autoritativa para esta decision.
+
+> **Salvaguarda secundaria opcional**: si tras `exists` → NO quieres
+> deteccion adicional de perfiles huerfanos en memoria (datos
+> clinicos sin PIN), puedes usar `memory_search_nodes(query=
+> "cliente_<id>")` como verificacion adicional. Esto es solo
+> defensivo y NO bloquea el Caso A: su salida nunca debe
+> reescribir el resultado del script.
 
 Este Paso 0 es **obligatorio en TODAS las devoluciones de
-`ERR_NO_PIN_SET`**, sin excepcion. Saltarselo reintroduce la
-vulnerabilidad que el sistema de autenticacion por PIN esta
-disenado para cerrar.
+`ERR_NO_PIN_SET`**, sin excepcion. Saltarselo o sustituir el script
+por busqueda semantica reintroduce la vulnerabilidad que el sistema
+de autenticacion por PIN esta disenado para cerrar.
 
 **Paso 1 — Configuracion (solo Caso A, cliente nuevo legitimo):**
 
-Confirmado el Caso A, el agente NO crea el perfil en memoria hasta que
-exista un PIN configurado, y procede asi:
+Confirmado el Caso A (Paso 0 devolvio `NO` desde `exists`), el agente
+NO crea el perfil en memoria hasta que exista un PIN configurado, y
+procede asi:
+
+> **Recordatorio obligatorio**: si antes de llegar a Paso 1 se ha
+> usado busqueda semantica de memoria y arroja cualquier resultado
+> relacionado con `cliente_<id>`, ese resultado NO anula el Caso A
+> ya validado por `exists`. La unica salida de `exists` es
+> autoritativa; la memoria solo aporta contexto, nunca bloquea.
 
 1. El agente explica con calidez:
    > *"Veo que es tu primera vez por aqui, o que aun no tienes PIN configurado.

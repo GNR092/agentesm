@@ -5,12 +5,15 @@ auth_pin.py - Sistema de autenticacion por PIN hasheado para agentes opencode.
 Uso:
     auth_pin.py set <client_id> <pin>
     auth_pin.py verify <client_id> <pin>
+    auth_pin.py exists <client_id>     # YES/NO leyendo pins.json (fuente de verdad)
     auth_pin.py delete <client_id>      # Alias de 'reset' sin confirmacion
     auth_pin.py reset <client_id> --confirm
     auth_pin.py list
 
 Output (stdout) - solo strings simples, NUNCA hashes ni sales:
     OK
+    YES                          # solo en subcomando 'exists'
+    NO                           # solo en subcomando 'exists'
     ERR_INVALID_PIN
     ERR_LOCKED_OUT: <segundos>
     ERR_NO_PIN_SET
@@ -21,6 +24,11 @@ Output (stdout) - solo strings simples, NUNCA hashes ni sales:
     ERR_RATE_LIMITED_INTERNAL
 
 Los errores tecnicos se escriben a stderr.
+
+Importante: 'exists' es la fuente de verdad autoritativa para decisiones de
+seguridad (ej. distingir Caso A vs Caso B en el flujo de configuracion inicial
+del PIN). NO usar busqueda semantica de memoria para esa bifurcacion, porque
+su umbral es configurable y discrecional, y puede omitir perfiles reales.
 """
 
 import argparse
@@ -203,6 +211,33 @@ def cmd_set(args):
     return 0
 
 
+def cmd_exists(args):
+    """Comprueba si existe un PIN configurado para <client_id>.
+
+    Lee pins.json (0600) directamente. NO expone hashes, sales ni timestamps.
+    Es la fuente de verdad autoritativa para decisiones de seguridad
+    (bifurcacion Caso A vs Caso B en el flujo de configuracion inicial del PIN):
+    su salida es un contrato binario trivialmente parseable, NO juicio
+    discrecional sobre busqueda semantica de memoria.
+
+    Output:
+        YES    -> existe registro para ese client_id
+        NO     -> no existe registro
+        ERR_CORRUPT_FILE -> pins.json no es un objeto JSON valido
+    """
+    client_id = args.client_id
+    ensure_data_dir()
+    pins = load_json(PINS_FILE, "pins.json")
+    if pins is None:
+        print("ERR_CORRUPT_FILE")
+        return 0
+    if client_id in pins:
+        print("YES")
+    else:
+        print("NO")
+    return 0
+
+
 def cmd_verify(args):
     client_id = args.client_id
     pin = args.pin
@@ -332,6 +367,13 @@ def build_parser():
     p_verify.add_argument("client_id")
     p_verify.add_argument("pin")
     p_verify.set_defaults(func=cmd_verify)
+
+    p_exists = sub.add_parser(
+        "exists",
+        help="Comprobar existencia de PIN (YES/NO). Fuente de verdad autoritativa.",
+    )
+    p_exists.add_argument("client_id")
+    p_exists.set_defaults(func=cmd_exists)
 
     p_delete = sub.add_parser("delete", help="Eliminar PIN (sin confirmacion)")
     p_delete.add_argument("client_id")
