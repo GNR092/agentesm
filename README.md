@@ -140,4 +140,12 @@ Las contribuciones son bienvenidas. Por favor:
 
 ## Licencia
 
-MIT
+Este trabajo está licenciado bajo **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International** (CC BY-NC-SA 4.0).
+
+- ✅ **Compartir** — copiar y redistribuir el material en cualquier medio o formato
+- ✅ **Adaptar** — remezclar, transformar y construir a partir del material
+- ❌ **Uso comercial** — no está permitido
+- ⚠️ **Atribución** — debe dar crédito adecuado
+- ⚠️ **CompartirIgual** — las adaptaciones deben distribuirse bajo la misma licencia
+
+Ver el archivo [`LICENSE`](LICENSE) para el texto completo.
