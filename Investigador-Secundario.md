@@ -81,6 +81,7 @@ Formato del nombre: `fuente_[NUMERO]_[TEMA_CORTO].md`.
 El contenido `.md` DEBE tener estrictamente esta estructura:
 ```
 ---
+disable: true
 Tema: [Tema corto]
 Fuente: [Nombre del estudio/paper/documento, Autores, Año, DOI/URL]
 Nivel de Evidencia: [Alta/Moderada/Baja]
