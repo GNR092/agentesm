@@ -39,7 +39,7 @@ Todas las definiciones de agentes se encuentran bajo `~/.config/opencode/agents/
   - Atracción humana → `@Investigador-Cientifico`
   - Otro tema → `@Investigador-Secundario`
 - **Operaciones de infraestructura**: `@docker`, `@git`
-- **Versionado**: `@versionador` (análisis) → usuario decide → `@git` (tag + push)
+- **Versionado**: `@git` invoca a `@versionador` para analizar y proponer SemVer; `@git` crea/actualiza el tag local. El usuario decide si hacer `git push` del tag.
 
 ## Agentes primarios
 
