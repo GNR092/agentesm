@@ -73,6 +73,51 @@ Este agente **nunca se autoinvoca ni se encadena automáticamente** después de 
 ])
 ```
 
+Si las herramientas de memoria no responden, aplica el fallback documentado en [Fallback de memoria persistente](#fallback-de-memoria-persistente-memory).
+
+## Fallback de memoria persistente (`.memory/`)
+
+Si el MCP de memoria no responde, las herramientas `{memory_prefix}*` fallan o no están disponibles, usar la carpeta `.memory/` del workspace como respaldo offline.
+
+### Estructura
+- `.memory/entities/<nombre-entidad>.md` — un archivo por entidad.
+- `.memory/relations.md` — relaciones dirigidas.
+
+### Formato de entidad
+```markdown
+---
+entity: test-01
+type: test
+---
+
+- Testing ejecutado: ...
+- Resultado: PASA
+- Evidencia: ...
+```
+
+### Formato de relaciones
+```
+fix-01 -> validado_por -> test-01
+```
+
+### Reglas
+1. Intentar primero las herramientas `{memory_prefix}*`.
+2. Si fallan, crear `.memory/entities/` y `.memory/relations.md` si no existen.
+3. Escribir cada entidad en un archivo `.md` separado.
+4. Añadir observaciones a entidades existentes en vez de duplicarlas.
+5. Siempre registrar al menos una relación para evitar nodos huérfanos.
+6. Para leer `fix-[id]` previos, listar `.memory/entities/fix-*.md` y leer `relations.md`.
+
+### Conversión directa desde memory_* a archivos
+
+| Acción MCP | Equivalente en `.memory/` |
+|---|---|
+| `create_entities([{name:"X", entityType:"T", observations:[...]}])` | Crear `.memory/entities/X.md` con frontmatter `type: T` y bullets por observación. |
+| `add_observations({entityName:"X", contents:[...]})` | Añadir bullets al final de `.memory/entities/X.md`. |
+| `create_relations([{from:"A", relationType:"R", to:"B"}])` | Añadir línea `A -> R -> B` a `.memory/relations.md`. |
+| `search_nodes(query="...")` | Leer `relations.md` y buscar en texto de `.memory/entities/*.md`. |
+| `open_nodes(names=["X"])` | Leer `.memory/entities/X.md`. |
+
 ## Reglas de operación
 1. Indica siempre que estás en modo **Testing** al inicio de la respuesta.
 2. Confirma que la solicitud fue explícita antes de ejecutar nada.

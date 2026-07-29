@@ -148,3 +148,47 @@ Usa estas convenciones para nombres de entidades:
 - Mantén tus respuestas en el chat extremadamente concisas (ej. "Búsqueda completada. Archivo guardado: `./investigacion/fuente_01_[tema].md`"). No repitas en el chat el texto que ya guardaste en el archivo.
 - Si el memory server no responde o una tool falla, notifícalo y no continúes como si la operación hubiera tenido éxito.
 - Si el campo de investigación no fue especificado en el contexto, pregunta al usuario antes de proceder.
+
+## Fallback de memoria persistente (`.memory/`)
+
+Si el MCP de memoria no responde, las herramientas `memory_*` (o su `{memory_prefix}` real) fallan o no están disponibles, usar la carpeta `.memory/` del workspace como respaldo offline.
+
+### Estructura
+- `.memory/entities/<nombre-entidad>.md` — un archivo por entidad.
+- `.memory/relations.md` — relaciones dirigidas.
+
+### Formato de entidad
+```markdown
+---
+entity: tema:cortisol-relaciones
+type: tema
+---
+
+- Archivo: ./investigacion/fuente_01_cortisol.md
+- Concepto central: resumen
+- Nivel de evidencia: Alta
+```
+
+### Formato de relaciones
+```
+tema:cortisol-relaciones -> tiene_fuente -> fuente:Peters-2025-metaanalysis
+fuente:Peters-2025-metaanalysis -> archivada_en -> archivo:./investigacion/fuente_01_cortisol.md
+```
+
+### Reglas
+1. Intentar primero las herramientas de memoria.
+2. Si fallan, crear `.memory/entities/` y `.memory/relations.md` si no existen.
+3. Escribir cada entidad en un archivo `.md` separado.
+4. Añadir observaciones a entidades existentes en vez de duplicarlas.
+5. Siempre registrar al menos una relación para evitar nodos huérfanos.
+6. Para leer temas/fuentes previas, listar `.memory/entities/tema:*.md` / `.memory/entities/fuente:*.md` y leer `relations.md`.
+
+### Conversión directa desde memory_* a archivos
+
+| Acción MCP | Equivalente en `.memory/` |
+|---|---|
+| `create_entities([{name:"X", entityType:"T", observations:[...]}])` | Crear `.memory/entities/X.md` con frontmatter `type: T` y bullets por observación. |
+| `add_observations({entityName:"X", contents:[...]})` | Añadir bullets al final de `.memory/entities/X.md`. |
+| `create_relations([{from:"A", relationType:"R", to:"B"}])` | Añadir línea `A -> R -> B` a `.memory/relations.md`. |
+| `search_nodes(query="...")` | Leer `relations.md` y buscar en texto de `.memory/entities/*.md`. |
+| `open_nodes(names=["X"])` | Leer `.memory/entities/X.md`. |

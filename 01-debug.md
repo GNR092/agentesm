@@ -345,6 +345,8 @@ Si se detecta un patrón de fallo (contaminación de estado, race condition, etc
 ])
 ```
 
+Si las herramientas de memoria no responden, aplica el fallback documentado en [Fallback de memoria persistente](#fallback-de-memoria-persistente-memory) para guardar la misma información en `.memory/`.
+
 ---
 
 ## Apertura de H[N+1]
@@ -585,7 +587,52 @@ Usar estas convenciones para nombres de entidades:
 3. **Actualizar en vez de duplicar** — si una entidad ya existe, añadir observaciones, no crear otra.
 4. **Priorizar sincronía** — tras cada guardado relevante, considerar invocar `memory-sync`.
 
+Si las herramientas de memoria no responden, aplica el fallback documentado en [Fallback de memoria persistente](#fallback-de-memoria-persistente-memory).
+
 ---
+
+## Fallback de memoria persistente (`.memory/`)
+
+Si el MCP de memoria no responde, las herramientas `{memory_prefix}*` fallan o no están disponibles, usar la carpeta `.memory/` del workspace como respaldo offline.
+
+### Estructura
+- `.memory/entities/<nombre-entidad>.md` — un archivo por entidad.
+- `.memory/relations.md` — relaciones dirigidas.
+
+### Formato de entidad
+```markdown
+---
+entity: bug-42
+type: bug
+---
+
+- Campo: valor
+- Campo: valor
+```
+
+### Formato de relaciones
+Una línea por relación:
+```
+<origen> -> <tipo-relacion> -> <destino>
+```
+
+### Reglas
+1. Intentar primero las herramientas `{memory_prefix}*`.
+2. Si fallan, crear `.memory/entities/` y `.memory/relations.md` si no existen.
+3. Escribir cada entidad en un archivo `.md` separado.
+4. Añadir observaciones a entidades existentes en vez de duplicarlas.
+5. Siempre registrar al menos una relación para evitar nodos huérfanos.
+6. Para leer planes previos, listar `.memory/entities/plan-*.md` y leer `relations.md`.
+
+### Conversión directa desde memory_* a archivos
+
+| Acción MCP | Equivalente en `.memory/` |
+|---|---|
+| `create_entities([{name:"X", entityType:"T", observations:[...]}])` | Crear `.memory/entities/X.md` con frontmatter `type: T` y bullet por observación. |
+| `add_observations({entityName:"X", contents:[...]})` | Añadir bullets al final de `.memory/entities/X.md`. |
+| `create_relations([{from:"A", relationType:"R", to:"B"}])` | Añadir línea `A -> R -> B` a `.memory/relations.md`. |
+| `search_nodes(query="...")` | Leer `relations.md` y buscar en texto de `.memory/entities/*.md`. |
+| `open_nodes(names=["X"])` | Leer `.memory/entities/X.md`. |
 
 ## Reglas de Operación
 
@@ -603,7 +650,7 @@ Usar estas convenciones para nombres de entidades:
 12. **Indicar siempre el modo de operación** — al inicio de la respuesta, declarar que se está en modo **Investigación** (este agente). Los modos Plan de fixes, Complementación y Testing viven en sus propios agentes (`02-agente-plan.md`, `03-fix.md`, `04-test.md`) y requieren confirmación explícita del usuario para invocarlos.
 13. **Nunca pasar de Investigación a otro modo sin confirmación.** Si la investigación termina con causa raíz CONFIRMADA, esperar a que el usuario invoque `02-agente-plan.md`.
 14. **Nunca ejecutar Testing sin solicitud explícita.** Testing está en `04-test.md` y requiere su propia invocación.
-15. **Si el memory server no responde o una tool falla** — notificar y no continuar como si la operación hubiera tenido éxito.
+15. **Si el memory server no responde o una tool falla** — notificar y no continuar como si la operación hubiera tenido éxito. Aplica el fallback a `.memory/` si corresponde.
 
 ---
 
