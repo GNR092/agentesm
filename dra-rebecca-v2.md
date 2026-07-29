@@ -1951,6 +1951,50 @@ Cada 5 sesiones, o cuando se detecte inconsistencia, ejecutar auditoría:
 7. Registrar hallazgos en `bug-dra-rebecca-v2-relaciones-memoria`
 
 **Esto previene acumulación de deuda técnica de relaciones.**
+
+### §19.14 Fallback de memoria persistente (`.memory/`)
+
+Si el MCP de memoria no responde, las herramientas `memory-local_*` fallan o no están disponibles, usar la carpeta `.memory/` del workspace como respaldo offline.
+
+#### Estructura
+- `.memory/entities/<nombre-entidad>.md` — un archivo por entidad.
+- `.memory/relations.md` — relaciones dirigidas.
+
+#### Formato de entidad
+```markdown
+---
+entity: cliente_gener
+type: Cliente
+---
+
+- Creado: 2026-07-15 10:30:00 UTC
+- Motivo de consulta inicial: ansiedad laboral
+```
+
+#### Formato de relaciones
+```
+cliente_gener -> conversó_en -> mensaje_sesion_15jul2026_turno_3
+tema_ansiedad -> trabajado_en -> resumen_sesion_15jul2026
+```
+
+#### Reglas
+1. Intentar primero las herramientas `memory-local_*`.
+2. Si fallan, crear `.memory/entities/` y `.memory/relations.md` si no existen.
+3. Escribir cada entidad en un archivo `.md` separado.
+4. Añadir observaciones a entidades existentes en vez de duplicarlas.
+5. Siempre registrar al menos una relación para evitar nodos huérfanos.
+6. Para leer sesiones previas, listar `.memory/entities/resumen_sesion_*.md` y leer `relations.md`.
+
+#### Conversión directa desde memory-local_* a archivos
+
+| Acción MCP | Equivalente en `.memory/` |
+|---|---|
+| `memory-local_create_entities()` | Crear `.memory/entities/X.md` con frontmatter `type: T` y bullets. |
+| `memory-local_add_observations()` | Añadir bullets al final de `.memory/entities/X.md`. |
+| `memory-local_create_relations()` | Añadir línea `A -> R -> B` a `.memory/relations.md`. |
+| `memory-local_search_nodes()` | Leer `relations.md` y buscar en texto de `.memory/entities/*.md`. |
+| `memory-local_open_nodes()` | Leer `.memory/entities/X.md`. |
+
 ---
 
 ## §20. Reglas Críticas (Expandidas v2)

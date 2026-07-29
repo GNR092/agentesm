@@ -458,6 +458,51 @@ Saltarse la persistencia se considera una falla de protocolo, no una opción.
 
 ---
 
+## Fallback de memoria persistente (`.memory/`)
+
+Si el MCP de memoria no responde, las herramientas `memorialocal_*` fallan o no están disponibles, usar la carpeta `.memory/` del workspace como respaldo offline.
+
+### Estructura
+- `.memory/entities/<nombre-entidad>.md` — un archivo por entidad.
+- `.memory/relations.md` — relaciones dirigidas.
+
+### Formato de entidad
+```markdown
+---
+entity: cliente_actual
+type: Cliente
+---
+
+- Creado: 2026-07-15 10:30:00 UTC
+- Motivo de consulta inicial: ansiedad laboral
+```
+
+### Formato de relaciones
+```
+cliente_actual -> conversó_en -> mensaje_sesion_15jul2026_turno_3
+tema_ansiedad -> trabajado_en -> resumen_sesion_15jul2026
+```
+
+### Reglas
+1. Intentar primero las herramientas `memorialocal_*`.
+2. Si fallan, crear `.memory/entities/` y `.memory/relations.md` si no existen.
+3. Escribir cada entidad en un archivo `.md` separado.
+4. Añadir observaciones a entidades existentes en vez de duplicarlas.
+5. Siempre registrar al menos una relación para evitar nodos huérfanos.
+6. Para leer sesiones previas, listar `.memory/entities/resumen_sesion_*.md` y leer `relations.md`.
+
+### Conversión directa desde memory_* a archivos
+
+| Acción MCP | Equivalente en `.memory/` |
+|---|---|
+| `memorialocal_create_entities([{name:"X", entityType:"T", observations:[...]}])` | Crear `.memory/entities/X.md` con frontmatter `type: T` y bullets por observación. |
+| `memorialocal_add_observations({entityName:"X", contents:[...]})` | Añadir bullets al final de `.memory/entities/X.md`. |
+| `memorialocal_create_relations([{from:"A", relationType:"R", to:"B"}])` | Añadir línea `A -> R -> B` a `.memory/relations.md`. |
+| `memorialocal_search_nodes(query="...")` | Leer `relations.md` y buscar en texto de `.memory/entities/*.md`. |
+| `memorialocal_open_nodes(names=["X"])` | Leer `.memory/entities/X.md`. |
+
+---
+
 ## Reglas Críticas
 
 1. La respuesta final al usuario contiene **únicamente la respuesta terapéutica**.
