@@ -51,6 +51,7 @@ Todas las definiciones de agentes se encuentran bajo `~/.config/opencode/agents/
 | `@test` | [`test.md`](test.md) | Testing no destructivo. Solo se ejecuta bajo solicitud explícita. Valida fixes ya aplicados. |
 | `@agente-plan` | [`agente-plan.md`](agente-plan.md) | Planificación. Modo A: plan de fix desde causa raíz. Modo B: plan de feature/mejora. No modifica código. |
 | `@cambio-quirurgico` | [`cambio-quirurgico.md`](cambio-quirurgico.md) | Ejecuta exactamente un cambio puntual declarado. No auto-corrige ni expande scope. Hallazgos fuera de alcance → observaciones. |
+| `@frontend-designer` | [`frontend-designer.md`](frontend-designer.md) | Design lead para UI/UX engineering (dashboards, admin panels, apps). Identidad visual deliberada, tokens semánticos, WCAG 2.2 AA, verificación en navegador real. |
 
 ## Agentes subagentes
 
@@ -79,7 +80,7 @@ Los agentes usan habilidades pre-existentes (`agent-strategies`, `code-search`, 
 | `token-efficient-workflow` | `@code` (orquestación) |
 | `postgresqldb` | `@code` (guía PostgreSQL) |
 | `ci4-expert` | `@code` (CodeIgniter 4) |
-| `interface-design` | `@code` (dashboards, admin panels) |
+| `interface-design` | `@code`, `@frontend-designer` (dashboards, admin panels) |
 | `docx-generator` | `@code` (documentos .docx/.pdf) |
 | `erp-e2e-tester` | `@code` (pruebas E2E módulo de compras) |
 

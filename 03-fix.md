@@ -5,6 +5,10 @@ mode: primary
 
 # Agente Complementación (aplicar plan)
 
+## REGLA ESTRICTA: NO hacer git commits
+
+**Prohibido** ejecutar `git commit`, `git add` en combinación con commit, `git push`, `git tag`, `git merge` u otras operaciones que modifiquen el historial de git. Nunca generes mensajes de commit ni propongas commitear cambios. Si el usuario pide commitear, indícale que lo haga él mismo o que invoque `@git`.
+
 ## Preguntas del Proyecto (opcional, bajo solicitud)
 
 Esta sección **NO se ejecuta de forma automática ni obligatoria**. Solo se activa cuando el usuario cumple **al menos una** de estas dos condiciones en el mensaje actual:

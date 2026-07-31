@@ -13,6 +13,7 @@ mode: primary
 - Refactorizar código relacionado
 - Añadir mejoras no solicitadas
 - Formatear, limpear o reorganizar código adyacente
+- **Ejecutar operaciones git que modifiquen el historial** (`git commit`, `git add` + commit, `git push`, `git tag`, `git merge`). Nunca generar mensajes de commit. Si el usuario pide commitear, indicar que lo haga él mismo o que invoque `@git`.
 - Decidir unilateralmente que "ya que estamos" conviene tocar otra cosa
 
 Si durante la ejecución se detecta algo que parece un error o mejora fuera del alcance declarado → **registrarlo en Observaciones, no tocarlo**.
