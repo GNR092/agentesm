@@ -1,0 +1,15 @@
+.codesearch.db
+*.zip
+data/
+.search/
+CienciaAtraccion130626.md
+scripts/__pycache__/
+investigacion/
+
+# Fallback de memoria persistente: se ignora el contenido dinámico, no la plantilla.
+.memory/*
+!.memory/README.md
+!.memory/relations.md
+!.memory/entities/
+.memory/entities/**
+!.memory/entities/.gitkeep
