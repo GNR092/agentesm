@@ -1,15 +1,31 @@
+# Base de datos de indexación semántica
 .codesearch.db
+
+# Archivos temporales y del sistema
 *.zip
+*.tmp
+*.log
+*.env
+.DS_Store
+Thumbs.db
+
+# Datos generados
 data/
 .search/
-CienciaAtraccion130626.md
-scripts/__pycache__/
+
+# Investigación (contenido dinámico, no versionado)
 investigacion/
+
+# Archivos específicos
+CienciaAtraccion130626.md
+
+# Python
+scripts/__pycache__/
 
 # Fallback de memoria persistente: se ignora el contenido dinámico, no la plantilla.
 .memory/*
 !.memory/README.md
 !.memory/relations.md
 !.memory/entities/
-.memory/entities/**
+!.memory/entities/**
 !.memory/entities/.gitkeep
