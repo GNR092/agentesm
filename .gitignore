@@ -1,5 +1,6 @@
 .codesearch.db
 *.zip
+*.bak
 data/
 .search/
 CienciaAtraccion130626.md
