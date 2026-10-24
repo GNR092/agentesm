@@ -275,36 +275,157 @@ def cmd_enqueue(args) -> int:
 # Subcomando: drain
 # ---------------------------------------------------------------------------
 
+# --- Config MCP (JSONC tolerante) -------------------------------------------
+
+CONFIG_PATH = Path.home() / ".config" / "opencode" / "opencode.jsonc"
+MCP_SERVER_NAME = "memory-local"
+
+
+def _strip_jsonc(text: str) -> str:
+    """Quita comentarios // y /* */ de un JSONC sin romper strings."""
+    out = []
+    i, n = 0, len(text)
+    in_str = False
+    while i < n:
+        c = text[i]
+        if in_str:
+            out.append(c)
+            if c == "\\" and i + 1 < n:
+                out.append(text[i + 1])
+                i += 2
+                continue
+            if c == '"':
+                in_str = False
+            i += 1
+            continue
+        if c == '"':
+            in_str = True
+            out.append(c)
+            i += 1
+            continue
+        if c == "/" and i + 1 < n and text[i + 1] == "/":
+            while i < n and text[i] != "\n":
+                i += 1
+            continue
+        if c == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i += 2
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def load_mcp_config() -> dict:
+    """Devuelve la config del server MCP memory-local: {url, headers}."""
+    raw = CONFIG_PATH.read_text(encoding="utf-8")
+    cfg = json.loads(_strip_jsonc(raw))
+    srv = (cfg.get("mcp") or {}).get(MCP_SERVER_NAME)
+    if not srv or not srv.get("url"):
+        raise RuntimeError(f"{MCP_SERVER_NAME} no encontrado en {CONFIG_PATH}")
+    return {"url": srv["url"], "headers": srv.get("headers", {})}
+
+
+def _parse_mcp_body(raw: str) -> dict:
+    """El server puede responder JSON plano o SSE (text/event-stream)."""
+    raw = raw.strip()
+    if not raw:
+        raise RuntimeError("respuesta vacia del MCP")
+    if raw[0] in "{[":
+        return json.loads(raw)
+    for line in raw.splitlines():
+        line = line.strip()
+        if line.startswith("data:"):
+            chunk = line[5:].strip()
+            if chunk and chunk != "[DONE]":
+                return json.loads(chunk)
+    raise RuntimeError(f"respuesta MCP no parseable: {raw[:200]}")
+
+
 def call_mcp_tool(tool_name: str, args_obj: dict) -> tuple[bool, str]:
-    """Llama a un tool MCP via subprocess (Claude Code CLI bridge).
-    Retorna (ok, mensaje_error_o_vacio)."""
-    # En opencode, los MCP tools se invocan via JSON-RPC al server.
-    # Aqui usamos un wrapper generico: ejecutar el comando CLI si existe,
-    # sino retornar (False, 'mcp_cli_not_available').
-    #
-    # Nota: como fallback robusto, intentamos `opencode mcp call <tool>`.
-    # Si esa CLI no existe en este entorno, marcamos como no drenable
-    # (la entrada permanecera en cola para intento posterior).
-    cmd = ["opencode", "mcp", "call", tool_name, json.dumps(args_obj)]
+    """Invoca un tool de memory-local via JSON-RPC (MCP Streamable HTTP) usando curl.
+
+    Se usa curl y no urllib porque Cloudflare del host remoto banea la firma
+    'Python-urllib/*' (error 1010 browser_signature_banned). curl si esta permitido.
+    """
+    import tempfile
+
     try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
-        )
-    except FileNotFoundError:
-        return False, "opencode_cli_not_available"
-    except subprocess.TimeoutExpired:
-        return False, "timeout"
+        cfg = load_mcp_config()
+    except Exception as e:
+        return False, f"config_error:{e}"
+
+    mcp_tool = tool_name.split("_", 1)[1] if tool_name.startswith(MCP_SERVER_NAME + "_") else tool_name
+
+    def _post(payload: dict, extra_headers: dict | None = None):
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
+        headers.update(cfg["headers"])
+        if extra_headers:
+            headers.update(extra_headers)
+        hdr = tempfile.NamedTemporaryFile(delete=False, suffix=".hdr")
+        hdr.close()
+        cmd = ["curl", "-sS", "--max-time", "30", "-X", "POST", "-D", hdr.name]
+        for k, v in headers.items():
+            cmd += ["-H", f"{k}: {v}"]
+        cmd += ["--data-binary", json.dumps(payload), cfg["url"]]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=40)
+            try:
+                with open(hdr.name, encoding="utf-8", errors="replace") as fh:
+                    raw_headers = fh.read()
+            except OSError:
+                raw_headers = ""
+            if proc.returncode != 0:
+                raise RuntimeError(f"curl_exit_{proc.returncode}:{proc.stderr[:200]}")
+            return proc.stdout, raw_headers
+        finally:
+            try:
+                os.unlink(hdr.name)
+            except OSError:
+                pass
+
+    try:
+        _, raw_headers = _post({
+            "jsonrpc": "2.0", "id": 1, "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "memory-retry-queue", "version": "1.0"},
+            },
+        })
+        session_id = None
+        for line in raw_headers.splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                if k.strip().lower() == "mcp-session-id" and v.strip():
+                    session_id = v.strip()
+        extra = {"mcp-session-id": session_id} if session_id else {}
+
+        _post({"jsonrpc": "2.0", "method": "notifications/initialized"}, extra)
+
+        raw, _ = _post({
+            "jsonrpc": "2.0", "id": 2, "method": "tools/call",
+            "params": {"name": mcp_tool, "arguments": args_obj},
+        }, extra)
     except Exception as e:
         return False, f"unexpected:{e}"
 
-    if result.returncode != 0:
-        return False, (result.stderr or result.stdout or "unknown_error").strip()
-    return True, ""
+    try:
+        msg = _parse_mcp_body(raw)
+    except Exception as e:
+        return False, f"parse_error:{e}"
 
+    if "error" in msg:
+        return False, f"rpc_error:{json.dumps(msg['error'])[:300]}"
+    result = msg.get("result", {})
+    if result.get("isError"):
+        return False, f"tool_error:{json.dumps(result)[:300]}"
+    return True, ""
 
 def read_all_entries() -> list[tuple[str, dict]]:
     """Lee todas las entradas validas y devuelve (raw_line, parsed_dict).
