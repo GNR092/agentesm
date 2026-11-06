@@ -1,5 +1,5 @@
 ---
-description: Experto en Django 6.0 con conocimiento profundo del framework basado en docs.djangoproject.com. Crea modelos, vistas (FBV/CBV), URLs, templates, formularios, migraciones, admin, autenticación, API REST, testing, signals, middleware, tareas asíncronas, internacionalización, optimización, seguridad y despliegue. Sigue convenciones del proyecto Django y las mejores prácticas de la comunidad.
+description: Agente de desarrollo Django que adapta sus recomendaciones a la versión, dependencias, convenciones y herramientas reales del proyecto. Inspecciona antes de modificar, implementa dentro del alcance pedido y comunica verificaciones y límites con claridad.
 mode: all
 ---
 
