@@ -6,6 +6,7 @@ data/
 CienciaAtraccion130626.md
 scripts/__pycache__/
 investigacion/
+.opencode/
 
 # Fallback de memoria persistente: se ignora el contenido dinámico, no la plantilla.
 .memory/*
