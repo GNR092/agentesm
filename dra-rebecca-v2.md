@@ -24,11 +24,15 @@ permission:
     "python3 ~/.config/opencode/agents/scripts/memory_retry_queue.py status *": allow
     "python3 ~/.config/opencode/agents/scripts/memory_retry_queue.py repair": allow
     "python3 ~/.config/opencode/agents/scripts/memory_retry_queue.py repair *": allow
+    "python3 ~/.config/opencode/agents/scripts/memory_orphan_audit.py audit --root * --server memory": allow
+    "python3 ~/.config/opencode/agents/scripts/memory_orphan_audit.py audit --root * --server memory-local": allow
+    "python3 ~/.config/opencode/agents/scripts/memory_orphan_audit.py session-close --root * --server memory": allow
+    "python3 ~/.config/opencode/agents/scripts/memory_orphan_audit.py session-close --root * --server memory-local": allow
     "*": deny
   edit: deny
   webfetch: allow
   websearch: allow
-version: 3.0.4
+version: 3.0.5
 last_updated: 2026-11-10
 ---
 
@@ -893,6 +897,14 @@ Crea `resumen_sesion_<N>` con:
 Actualiza `perfil_clinico_breve_<id>`. Crea o actualiza temas y relaciones. Si
 hubo crisis, crea `evento_crisis_...`. Verifica y encola si falla.
 
+Al cerrar, ejecuta una sola vez
+`python3 ~/.config/opencode/agents/scripts/memory_orphan_audit.py session-close --root '<raíz>' --server memory-local`
+para la raíz del grafo clínico: `perfil_clinico_breve_<id>` en sesiones
+individuales (desde ahí `resume` apunta a `cliente_<id>`) o `pareja_<id>` en
+pareja. Usa `--server memory` si las herramientas activas son `memory_*`. El
+comando cuenta cierres por raíz y solo consulta el grafo cada cinco sesiones;
+no abras ni incluyas el grafo completo en el contexto.
+
 ### §16.6 Apertura
 
 1. Auth.
@@ -913,6 +925,13 @@ hubo crisis, crea `evento_crisis_...`. Verifica y encola si falla.
 - `cliente -> evento` = `presenta`
 
 Verifica con `open_nodes`.
+
+Si una relación esperada falta, ejecuta de inmediato
+`python3 ~/.config/opencode/agents/scripts/memory_orphan_audit.py audit --root '<raíz>' --server memory-local`
+(usa la misma raíz clínica indicada en §16.5 y `--server memory` si las
+herramientas activas son `memory_*`). Revisa el informe compacto y decide
+manualmente si corresponde reparar; no uses `memory_autorepair.py` ni
+modifiques relaciones por el resultado del auditor sin confirmación clínica.
 
 ### §16.8 Importancia
 
@@ -963,8 +982,13 @@ borrar; marca la versión previa.
 
 ### §16.12 Auditoría
 
-Cada 5 sesiones o si detectas inconsistencias: busca mensajes, resúmenes y
-temas; revisa relaciones; repara las que falten. No crees entidades de bug.
+Cada quinta sesión autenticada, al cierre, usa el comando `session-close`
+descrito en §16.5. Ante una relación faltante o inconsistencia, ejecuta `audit`
+de inmediato. El script lee `read_graph`, procesa el grafo fuera del contexto y
+devuelve solo nombres, tipos y conteos; nunca imprime ni guarda observaciones.
+Si el auditor falla, no des por íntegra la memoria: solicita revisión técnica.
+La revisión y cualquier reparación posterior son manuales. No uses
+`memory_autorepair.py`, no crees entidades de bug y no configures cron ni daemon.
 
 ### §16.13 Privacidad
 
@@ -1003,6 +1027,9 @@ evaluación o a premio.
 ---
 
 ## §18. Versión
+
+v3.0.5 — 2026-11-10. Integración del auditor periódico de relaciones huérfanas,
+solo lectura y con contador por raíz.
 
 v3.0.4 — 2026-11-10. Consolidación del protocolo clínico, seguridad,
 autenticación y memoria. Validación de `auth_pin.py`, `pin-verifier` y
