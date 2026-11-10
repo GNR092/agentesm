@@ -72,15 +72,12 @@ QUEUE_FILENAME = "memory_retry_queue.jsonl"
 CORRUPT_SUFFIX = ".corrupt"
 MAX_QUEUE_BYTES = 10 * 1024 * 1024  # 10 MB
 
-# Memoria local MCP server name (configurado en opencode.json)
-MEMORY_SERVER = "memory-local"
-
-# Operaciones soportadas -> nombre del tool MCP
+# Operaciones soportadas -> nombre del tool MCP (sin prefijo de servidor)
 OP_TO_TOOL = {
-    "create_entity": "memory-local_create_entities",
-    "add_observations": "memory-local_add_observations",
-    "create_relations": "memory-local_create_relations",
-    "delete_observations": "memory-local_delete_observations",
+    "create_entity": "create_entities",
+    "add_observations": "add_observations",
+    "create_relations": "create_relations",
+    "delete_observations": "delete_observations",
 }
 
 VALID_OPS = set(OP_TO_TOOL.keys())
@@ -199,6 +196,33 @@ def move_corrupt_line(raw_line: str) -> None:
     os.chmod(cp, 0o600)
 
 
+def normalize_payload(op: str, payload: dict) -> dict:
+    """Acepta tanto args exactos del tool como la forma corta del agente."""
+    if isinstance(payload.get("args"), dict):
+        payload = payload["args"]
+
+    if op == "create_entity":
+        return payload if "entities" in payload else {"entities": [payload]}
+    if op == "add_observations":
+        if "observations" in payload:
+            return payload
+        if "entityName" in payload:
+            contents = payload.get("contents", payload.get("observations", []))
+            return {"observations": [{"entityName": payload["entityName"],
+                                      "contents": contents}]}
+        return payload
+    if op == "create_relations":
+        return payload if "relations" in payload else {"relations": [payload]}
+    if op == "delete_observations":
+        if "deletions" in payload:
+            return payload
+        if "entityName" in payload:
+            return {"deletions": [{"entityName": payload["entityName"],
+                                   "observations": payload.get("observations", [])}]}
+        return payload
+    return payload
+
+
 # ---------------------------------------------------------------------------
 # Rotacion
 # ---------------------------------------------------------------------------
@@ -244,6 +268,8 @@ def cmd_enqueue(args) -> int:
         sys.stderr.write("[memory_retry_queue] payload debe ser objeto JSON\n")
         return 2
 
+    payload = normalize_payload(op, payload)
+
     entry = {
         "id": gen_id(),
         "op": op,
@@ -277,8 +303,10 @@ def cmd_enqueue(args) -> int:
 
 # --- Config MCP (JSONC tolerante) -------------------------------------------
 
-CONFIG_PATH = Path.home() / ".config" / "opencode" / "opencode.jsonc"
-MCP_SERVER_NAME = "memory-local"
+CONFIG_PATHS = (
+    Path.home() / ".config" / "opencode" / "opencode.json",
+    Path.home() / ".config" / "opencode" / "opencode.jsonc",
+)
 
 
 def _strip_jsonc(text: str) -> str:
@@ -318,14 +346,33 @@ def _strip_jsonc(text: str) -> str:
     return "".join(out)
 
 
-def load_mcp_config() -> dict:
-    """Devuelve la config del server MCP memory-local: {url, headers}."""
-    raw = CONFIG_PATH.read_text(encoding="utf-8")
-    cfg = json.loads(_strip_jsonc(raw))
-    srv = (cfg.get("mcp") or {}).get(MCP_SERVER_NAME)
-    if not srv or not srv.get("url"):
-        raise RuntimeError(f"{MCP_SERVER_NAME} no encontrado en {CONFIG_PATH}")
-    return {"url": srv["url"], "headers": srv.get("headers", {})}
+def load_mcp_config(server: str | None = None) -> dict:
+    """Devuelve la config del primer servidor MCP de memoria disponible."""
+    names = tuple(dict.fromkeys(filter(None, (
+        server,
+        os.environ.get("OPENCODE_MEMORY_SERVER"),
+        "memory-local",
+        "memory",
+    ))))
+    last_error = None
+    for path in CONFIG_PATHS:
+        try:
+            cfg = json.loads(_strip_jsonc(path.read_text(encoding="utf-8")))
+        except OSError as e:
+            last_error = e
+            continue
+        mcp = cfg.get("mcp") or {}
+        for name in names:
+            srv = mcp.get(name)
+            if not srv or not srv.get("url"):
+                continue
+            return {
+                "url": srv["url"],
+                "headers": srv.get("headers", {}),
+                "server": name,
+            }
+        last_error = RuntimeError(f"servidor de memoria no encontrado en {path}")
+    raise RuntimeError(str(last_error) if last_error else "config MCP no encontrada")
 
 
 def _parse_mcp_body(raw: str) -> dict:
@@ -344,7 +391,7 @@ def _parse_mcp_body(raw: str) -> dict:
     raise RuntimeError(f"respuesta MCP no parseable: {raw[:200]}")
 
 
-def call_mcp_tool(tool_name: str, args_obj: dict) -> tuple[bool, str]:
+def call_mcp_tool(tool_name: str, args_obj: dict, server: str | None = None) -> tuple[bool, str]:
     """Invoca un tool de memory-local via JSON-RPC (MCP Streamable HTTP) usando curl.
 
     Se usa curl y no urllib porque Cloudflare del host remoto banea la firma
@@ -353,11 +400,15 @@ def call_mcp_tool(tool_name: str, args_obj: dict) -> tuple[bool, str]:
     import tempfile
 
     try:
-        cfg = load_mcp_config()
+        cfg = load_mcp_config(server)
     except Exception as e:
         return False, f"config_error:{e}"
 
-    mcp_tool = tool_name.split("_", 1)[1] if tool_name.startswith(MCP_SERVER_NAME + "_") else tool_name
+    mcp_tool = tool_name
+    for prefix in ("memory-local_", "memory_"):
+        if mcp_tool.startswith(prefix):
+            mcp_tool = mcp_tool[len(prefix):]
+            break
 
     def _post(payload: dict, extra_headers: dict | None = None):
         headers = {
@@ -479,7 +530,7 @@ def cmd_drain(args) -> int:
 
     for raw, entry in to_process:
         tool = OP_TO_TOOL[entry["op"]]
-        ok, err = call_mcp_tool(tool, entry["payload"])
+        ok, err = call_mcp_tool(tool, entry["payload"], args.server)
         if ok:
             drained_ok.append(raw)
         else:
@@ -683,6 +734,8 @@ def build_parser() -> argparse.ArgumentParser:
     pd = sub.add_parser("drain", help="Reaplicar entradas pendientes.")
     pd.add_argument("--limit", type=int, default=0,
                     help="Maximo de entradas a procesar este turno (0=todas).")
+    pd.add_argument("--server", choices=("memory", "memory-local"), default=None,
+                    help="Servidor MCP a usar; por defecto memory-local.")
     pd.set_defaults(func=cmd_drain)
 
     # peek
