@@ -4,7 +4,7 @@ disable: true
 
 # AGENTS.md
 
-Índice de los agentes definidos en este directorio. Cada archivo `.md` aquí es un agente invocable por opencode.
+Índice de los agentes definidos en este directorio. Las guías Markdown de `prompting/guides/` llevan `disabled: true` y no son agentes invocables.
 
 ## Descripción del repositorio
 
@@ -21,7 +21,9 @@ Los agentes siguen un flujo de trabajo estructurado (debug → plan → fix → 
 La estructura física del repo se organiza en:
 
 ```
-*.md                       # Definiciones de agentes (uno por archivo)
+*.md                       # Definiciones de agentes en la raíz
+prompting/prompt-engineer.md # Agente de ingeniería de prompts (@prompting/prompt-engineer)
+prompting/guides/           # Guías locales de prompting (Markdown deshabilitado como agente)
 .codesearch.db/            # Índice de búsqueda semántica (ignorado)
 .search/                   # Caché de búsquedas web (ignorado)
 investigacion/            # Artefactos generados por los agentes investigadores (ignorado)
@@ -48,6 +50,7 @@ Todas las definiciones de agentes se encuentran bajo `~/.config/opencode/agents/
 |--------|---------|----------|
 | `@orquestador` | [`orquestador.md`](orquestador.md) | Agente predeterminado global. Detecta el dominio y delega a agentes existentes; pregunta si hay ambigüedad. |
 | `@code` | [`code.md`](code.md) | Ingeniería de software general; fallback para stacks sin especialista. |
+| `@prompting/prompt-engineer` | [`prompting/prompt-engineer.md`](prompting/prompt-engineer.md) | Genera prompts desde cero o mejora borradores, consulta primero guías locales y adapta al modelo indicado. |
 | `@01-debug` | [`01-debug.md`](01-debug.md) | Diagnóstico de fallos sin modificar código. |
 | `@Agente-Debugger` | [`Agente-Debugger.md`](Agente-Debugger.md) | Acompañamiento socrático para depuración. |
 | `@02-agente-plan` | [`02-agente-plan.md`](02-agente-plan.md) | Planificación de fixes y features; no modifica código. |

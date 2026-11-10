@@ -1,0 +1,13 @@
+Title: Learn to write prompts that work
+Source: https://systempromptmaster.com/learning
+Downloaded: 2026-11-10
+
+Available page text:
+Learning hub
+Learn to write prompts that work
+Guides re-read every time a model changes, and a blog that says what changed and what stopped working.
+Write your first one now
+The generator applies the method from the guides: pick the model, describe the job, and the prompt comes out.
+Write a prompt: https://systempromptmaster.com/auth
+
+Extraction note: The page returned HTTP 200, but its guide catalogue was still represented by a “Loading...” placeholder in the fetched HTML. The guide entries could not be extracted from this response.
