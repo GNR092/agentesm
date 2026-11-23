@@ -82,7 +82,7 @@ Antes de cambiar archivos:
 
 Si el plan requiere construir imágenes Docker o generar artefactos:
 
-1. Usa `./build.sh`; no invoques `docker build` directamente ni sustituyas el script por otro comando.
+1. Desde la raíz del proyecto, ejecuta el archivo `build.sh` con el intérprete que declara el script (por ejemplo, `bash -- build.sh` si declara Bash). No resuelvas `build.sh` mediante `PATH`, no invoques `docker build` directamente ni sustituyas el script.
 2. Antes de ejecutarlo, inspecciona el script y sus efectos para confirmar que no inicia pruebas no solicitadas ni realiza operaciones destructivas o ajenas al plan. Si no puedes confirmar que es seguro, detente y pregunta.
 3. Comprueba en archivos como `package.json` o `Cargo.toml` la versión esperada. Verifica también, con consultas de solo lectura, si existe la etiqueta `vX.Y.Z` requerida y a qué commit apunta.
 4. No crees ni muevas etiquetas: está prohibido modificar el historial de Git. Si la versión o la etiqueta necesaria falta, no coincide o no puede verificarse, detente, explica la discrepancia y pide instrucciones.
