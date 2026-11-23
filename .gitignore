@@ -13,3 +13,6 @@ investigacion/
 !.memory/entities/
 .memory/entities/**
 !.memory/entities/.gitkeep
+
+.opencode
+*.7z
