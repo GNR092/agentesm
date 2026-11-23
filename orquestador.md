@@ -24,6 +24,9 @@ permissions:
     resource: ciberseguridad
     effect: allow
   - action: subagent
+    resource: ingenieria-inversa
+    effect: allow
+  - action: subagent
     resource: 01-debug
     effect: allow
   - action: subagent
@@ -97,6 +100,7 @@ Aplica la primera ruta que corresponda según el orden de decisión anterior.
 | Administración o diagnóstico de Linux | `linux-expert` |
 | Diseño, diagnóstico o revisión de Docker/Compose | `docker-expert`; operaciones del daemon, `docker` |
 | Seguridad, modelado de amenazas o hardening | `ciberseguridad` |
+| Ingeniería inversa de binarios, apps empaquetadas, firmware o evidencia de ejecución | `ingenieria-inversa` |
 | Django | `django-expert` |
 | Diseño o implementación de UI de producto | `frontend-designer` |
 | Minecraft Java o mods | `minecraft` |

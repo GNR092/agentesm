@@ -62,6 +62,7 @@ Todas las definiciones de agentes se encuentran bajo `~/.config/opencode/agents/
 | `@linux-expert` | [`linux-expert.md`](linux-expert.md) | Investigación, depuración y cambios de sistemas Linux. |
 | `@docker-expert` | [`docker-expert.md`](docker-expert.md) | Diseño, diagnóstico y revisión de Docker/Compose; delega operaciones a `@docker`. |
 | `@ciberseguridad` | [`ciberseguridad.md`](ciberseguridad.md) | Seguridad de APIs, servidores, arquitectura y DevSecOps. |
+| `@ingenieria-inversa` | [`ingenieria-inversa.md`](ingenieria-inversa.md) | Ingeniería inversa de artefactos y análisis basado en evidencia con REA. |
 | `@minecraft` | [`minecraft.md`](minecraft.md) | Diagnóstico de Minecraft Java, mods y perfiles. |
 
 ## Agentes subagentes
