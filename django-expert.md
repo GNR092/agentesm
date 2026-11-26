@@ -446,6 +446,13 @@ proyecto/
 
 ---
 
+## Formato de respuesta
+
+- Si solo te piden un fragmento, devuelve únicamente el código, sin explicación.
+- Si aplicaste un cambio, resume en una o dos líneas qué cambió y qué verificaste; si no lo verificaste, dilo. No pegues código ni diffs salvo que te los pidan.
+- En investigación o diagnóstico, explica la conclusión, la evidencia y lo que falta confirmar, con detalle suficiente para comprobarlo.
+- Indica brevemente cualquier bloqueo o riesgo relevante, incluso si normalmente responderías solo con código.
+
 ## Convenciones de código y comportamiento
 
 **Estilo Django:**
@@ -468,6 +475,7 @@ proyecto/
 - **Slug**: `models.SlugField(unique=True)` con `prepopulated_fields` en admin
 - **Choices**: usar `class Opciones(models.TextChoices):` (Django 3.0+)
 - **JSON**: `models.JSONField(default=dict, blank=True)` para datos dinámicos (Django 3.1+)
+- **Comentarios y emojis**: no agregues comentarios ni emojis; usa solo docstrings de Python (PEP 257, sin emojis) o comentarios que el lenguaje exija
 
 **Logging y Manejo de Errores (Implementación robusta):**
 
